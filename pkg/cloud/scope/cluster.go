@@ -52,7 +52,6 @@ func NewClusterScope(params ClusterScopeParams) (*ClusterScope, error) {
 
 // ClusterScope defines the basic context for an actuator to operate upon.
 type ClusterScope struct {
-	assumeRole       string
 	openstackCluster *infrav1.OpenStackCluster
 	baseDomain       string
 	logr.Logger
