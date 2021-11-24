@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/route53"
 	"github.com/pkg/errors"
 
-	"github.com/giantswarm/dns-operator-aws/pkg/cloud/awserrors"
+	"github.com/giantswarm/dns-operator-openstack/pkg/cloud/awserrors"
 )
 
 var _ error = &Route53Error{}

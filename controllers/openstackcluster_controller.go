@@ -52,7 +52,6 @@ type OpenstackClusterReconciler struct {
 // +kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=openstackclusters/status,verbs=get;update;patch
 
 func (r *OpenstackClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
 	log := r.Log.WithValues("openstackluster", req.NamespacedName)
 
 	openstackCluster := &capo.OpenStackCluster{}

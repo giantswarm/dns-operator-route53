@@ -27,7 +27,7 @@ func NewClusterScope(params ClusterScopeParams) (*ClusterScope, error) {
 	if params.BaseDomain == "" {
 		return nil, errors.New("failed to generate new scope from emtpy string BaseDomain")
 	}
-	if params.Logger == (logr.Logger{}) {
+	if params.Logger == nil {
 		params.Logger = klogr.New()
 	}
 
