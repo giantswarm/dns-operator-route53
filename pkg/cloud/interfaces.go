@@ -33,6 +33,4 @@ type ClusterScoper interface {
 	ManagementClusterBaseDomain() string
 	// Name returns the CAPI cluster name.
 	Name() string
-	// Region returns the AWS infrastructure cluster object region.
-	Region() string
 }

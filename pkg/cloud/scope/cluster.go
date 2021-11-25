@@ -14,7 +14,6 @@ type ClusterScopeParams struct {
 	BaseDomain                  string
 	ManagementClusterBaseDomain string
 	Logger                      logr.Logger
-	Region                      string
 	Session                     awsclient.ConfigProvider
 }
 
@@ -35,7 +34,7 @@ func NewClusterScope(params ClusterScopeParams) (*ClusterScope, error) {
 		return nil, errors.New("failed to generate new scope from emtpy string ManagementClusterBaseDomain")
 	}
 
-	session, err := sessionForRegion(params.Region)
+	session, err := sessionForCluster(params.OpenstackCluster.Name)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create aws session")
 	}
@@ -45,7 +44,6 @@ func NewClusterScope(params ClusterScopeParams) (*ClusterScope, error) {
 		baseDomain:                  params.BaseDomain,
 		Logger:                      params.Logger,
 		managementClusterBaseDomain: params.ManagementClusterBaseDomain,
-		region:                      "readenv",
 		session:                     session,
 	}, nil
 }
@@ -56,7 +54,6 @@ type ClusterScope struct {
 	baseDomain       string
 	logr.Logger
 	managementClusterBaseDomain string
-	region                      string
 	session                     awsclient.ConfigProvider
 }
 
@@ -83,11 +80,6 @@ func (s *ClusterScope) ManagementClusterBaseDomain() string {
 // Name returns the AWS infrastructure cluster name.
 func (s *ClusterScope) Name() string {
 	return s.openstackCluster.Name
-}
-
-// Region returns the cluster region.
-func (s *ClusterScope) Region() string {
-	return s.region
 }
 
 // Session returns the AWS SDK session. Used for creating workload cluster client.

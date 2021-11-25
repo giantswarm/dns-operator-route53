@@ -1,7 +1,6 @@
 aws:
   accessKeyID: accesskey
   secretAccessKey: secretkey
-  region: region
 
 project:
   branch: "[[ .Branch ]]"

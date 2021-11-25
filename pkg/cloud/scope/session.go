@@ -3,16 +3,8 @@ package scope
 import (
 	"sync"
 
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 )
-
-// ServiceEndpoint defines a tuple containing AWS Service resolution information
-type ServiceEndpoint struct {
-	ServiceID     string
-	URL           string
-	SigningRegion string
-}
 
 var sessionCache sync.Map
 
@@ -20,20 +12,18 @@ type sessionCacheEntry struct {
 	session *session.Session
 }
 
-func sessionForRegion(region string) (*session.Session, error) {
-	if s, ok := sessionCache.Load(region); ok {
+func sessionForCluster(id string) (*session.Session, error) {
+	if s, ok := sessionCache.Load(id); ok {
 		entry := s.(*sessionCacheEntry)
 		return entry.session, nil
 	}
 
-	ns, err := session.NewSession(&aws.Config{
-		Region: aws.String(region),
-	})
+	ns, err := session.NewSession()
 	if err != nil {
 		return nil, err
 	}
 
-	sessionCache.Store(region, &sessionCacheEntry{
+	sessionCache.Store(id, &sessionCacheEntry{
 		session: ns,
 	})
 	return ns, nil

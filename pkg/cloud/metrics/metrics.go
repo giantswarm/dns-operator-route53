@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/prometheus/client_golang/prometheus"
 	"sigs.k8s.io/cluster-api-provider-aws/pkg/cloud/awserrors"
@@ -19,7 +18,6 @@ const (
 	metricRequestDurationKey = "api_request_duration_seconds"
 	metricAPICallRetries     = "api_call_retries"
 	metricServiceLabel       = "service"
-	metricRegionLabel        = "region"
 	metricOperationLabel     = "operation"
 	metricControllerLabel    = "controller"
 	metricStatusCodeLabel    = "status_code"
@@ -31,18 +29,18 @@ var (
 		Subsystem: metricAWSSubsystem,
 		Name:      metricRequestCountKey,
 		Help:      "Total number of AWS requests",
-	}, []string{metricControllerLabel, metricServiceLabel, metricRegionLabel, metricOperationLabel, metricStatusCodeLabel, metricErrorCodeLabel})
+	}, []string{metricControllerLabel, metricServiceLabel, metricOperationLabel, metricStatusCodeLabel, metricErrorCodeLabel})
 	awsRequestDurationSeconds = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Subsystem: metricAWSSubsystem,
 		Name:      metricRequestDurationKey,
 		Help:      "Latency of HTTP requests to AWS",
-	}, []string{metricControllerLabel, metricServiceLabel, metricRegionLabel, metricOperationLabel})
+	}, []string{metricControllerLabel, metricServiceLabel, metricOperationLabel})
 	awsCallRetries = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Subsystem: metricAWSSubsystem,
 		Name:      metricAPICallRetries,
 		Help:      "Number of retries made against an AWS API",
 		Buckets:   []float64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
-	}, []string{metricControllerLabel, metricServiceLabel, metricRegionLabel, metricOperationLabel})
+	}, []string{metricControllerLabel, metricServiceLabel, metricOperationLabel})
 )
 
 func init() {
@@ -55,7 +53,6 @@ func CaptureRequestMetrics(controller string) func(r *request.Request) {
 	return func(r *request.Request) {
 		duration := time.Since(r.AttemptTime)
 		operation := r.Operation.Name
-		region := aws.StringValue(r.Config.Region)
 		service := endpointToService(r.ClientInfo.Endpoint)
 		statusCode := "0"
 		errorCode := ""
@@ -68,9 +65,9 @@ func CaptureRequestMetrics(controller string) func(r *request.Request) {
 				errorCode = "internal"
 			}
 		}
-		awsRequestCount.WithLabelValues(controller, service, region, operation, statusCode, errorCode).Inc()
-		awsRequestDurationSeconds.WithLabelValues(controller, service, region, operation).Observe(duration.Seconds())
-		awsCallRetries.WithLabelValues(controller, service, region, operation).Observe(float64(r.RetryCount))
+		awsRequestCount.WithLabelValues(controller, service, operation, statusCode, errorCode).Inc()
+		awsRequestDurationSeconds.WithLabelValues(controller, service, operation).Observe(duration.Seconds())
+		awsCallRetries.WithLabelValues(controller, service, operation).Observe(float64(r.RetryCount))
 	}
 }
 
