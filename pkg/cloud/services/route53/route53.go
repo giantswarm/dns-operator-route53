@@ -220,7 +220,7 @@ func (s *Service) createWorkloadClusterZone() error {
 	now := time.Now()
 	input := &route53.CreateHostedZoneInput{
 		CallerReference: aws.String(now.UTC().String()),
-		Name:            aws.String(fmt.Sprintf("%s.k8s.%s.", s.scope.Name(), s.scope.BaseDomain())),
+		Name:            aws.String(fmt.Sprintf("%s.%s.", s.scope.Name(), s.scope.BaseDomain())),
 	}
 	_, err := s.Route53Client.CreateHostedZone(input)
 	if err != nil {
