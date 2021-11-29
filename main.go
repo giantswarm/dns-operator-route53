@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	capo "sigs.k8s.io/cluster-api-provider-openstack/api/v1alpha4"
-	capi "sigs.k8s.io/cluster-api/api/v1alpha3"
+	capi "sigs.k8s.io/cluster-api/api/v1alpha4"
 
 	"github.com/giantswarm/dns-operator-openstack/controllers"
 	// +kubebuilder:scaffold:imports
