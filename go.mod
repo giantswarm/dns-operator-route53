@@ -14,7 +14,7 @@ require (
 	k8s.io/klog v1.0.0
 	sigs.k8s.io/cluster-api v1.0.1-0.20211028151834-d72fd59c8483
 	sigs.k8s.io/cluster-api-provider-aws v0.6.8
-	sigs.k8s.io/cluster-api-provider-openstack v0.5.0
+	sigs.k8s.io/cluster-api-provider-openstack v0.4.0
 	sigs.k8s.io/controller-runtime v0.10.3-0.20211011182302-43ea648ec318
 )
 
@@ -51,5 +51,5 @@ replace (
 	k8s.io/mount-utils => k8s.io/mount-utils v0.22.2
 	k8s.io/pod-security-admission => k8s.io/pod-security-admission v0.22.2
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.22.2
-	sigs.k8s.io/cluster-api => sigs.k8s.io/cluster-api v1.0.1-0.20211028151834-d72fd59c8483
+	sigs.k8s.io/cluster-api => sigs.k8s.io/cluster-api v0.4.4
 )
