@@ -12,28 +12,28 @@ import (
 
 func (s *Service) DeleteRoute53() error {
 	s.scope.V(2).Info("Deleting hosted DNS zone")
-	// hostedZoneID, err := s.describeWorkloadClusterZone()
-	// if IsNotFound(err) {
-	// 	return nil
-	// } else if err != nil {
-	// 	return err
-	// }
+	hostedZoneID, err := s.describeWorkloadClusterZone()
+	if IsNotFound(err) {
+		return nil
+	} else if err != nil {
+		return err
+	}
 
 	// First delete delegation record from managament
-	// if err := s.changeManagementClusterDelegation("DELETE"); err != nil {
-	// 	return err
-	// }
+	if err := s.changeManagementClusterDelegation("DELETE"); err != nil {
+		return err
+	}
 
 	// We need to delete all records first before we can delete the hosted zone
-	// if err := s.changeWorkloadClusterRecords("DELETE"); err != nil {
-	// 	return err
-	// }
+	if err := s.changeWorkloadClusterRecords("DELETE"); err != nil {
+		return err
+	}
 
 	// Finally delete DNS zone for workload cluster
-	// err = s.deleteWorkloadClusterZone(hostedZoneID)
-	// if err != nil {
-	// 	return err
-	// }
+	err = s.deleteWorkloadClusterZone(hostedZoneID)
+	if err != nil {
+		return err
+	}
 	s.scope.V(2).Info(fmt.Sprintf("Deleting hosted zone completed successfully for cluster %s", s.scope.Name()))
 	return nil
 }
@@ -143,10 +143,11 @@ func (s *Service) changeWorkloadClusterRecords(action string) error {
 					ResourceRecordSet: &route53.ResourceRecordSet{
 						Name: aws.String(fmt.Sprintf("api.%s.%s", s.scope.Name(), s.scope.BaseDomain())),
 						Type: aws.String("A"),
-						AliasTarget: &route53.AliasTarget{
-							DNSName:              aws.String(s.scope.APIEndpoint()),
-							EvaluateTargetHealth: aws.Bool(false),
-							HostedZoneId:         aws.String(hostZoneID),
+						TTL:  aws.Int64(300),
+						ResourceRecords: []*route53.ResourceRecord{
+							{
+								Value: aws.String(s.scope.APIEndpoint()),
+							},
 						},
 					},
 				},
@@ -229,13 +230,13 @@ func (s *Service) createWorkloadClusterZone() error {
 	return nil
 }
 
-// func (s *Service) deleteWorkloadClusterZone(hostedZoneID string) error {
-// 	input := &route53.DeleteHostedZoneInput{
-// 		Id: aws.String(hostedZoneID),
-// 	}
-// 	_, err := s.Route53Client.DeleteHostedZone(input)
-// 	if err != nil {
-// 		return errors.Wrapf(err, "failed to delete hosted zone for cluster: %s", s.scope.Name())
-// 	}
-// 	return nil
-// }
+func (s *Service) deleteWorkloadClusterZone(hostedZoneID string) error {
+	input := &route53.DeleteHostedZoneInput{
+		Id: aws.String(hostedZoneID),
+	}
+	_, err := s.Route53Client.DeleteHostedZone(input)
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete hosted zone for cluster: %s", s.scope.Name())
+	}
+	return nil
+}
