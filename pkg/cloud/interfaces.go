@@ -29,8 +29,6 @@ type ClusterScoper interface {
 	BaseDomain() string
 	// Cluster returns the AWS infrastructure cluster object.
 	Cluster() *infrav1.OpenStackCluster
-	// ManagementClusterBaseDomain returns workload cluster domain. This could be the same domain like management cluster or something a different one.
-	ManagementClusterBaseDomain() string
 	// Name returns the CAPI cluster name.
 	Name() string
 }

@@ -48,10 +48,9 @@ func init() {
 
 func main() {
 	var (
-		enableLeaderElection        bool
-		metricsAddr                 string
-		workloadClusterBaseDomain   string
-		managementClusterBaseDomain string
+		enableLeaderElection bool
+		metricsAddr          string
+		baseDomain           string
 	)
 
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
@@ -59,8 +58,7 @@ func main() {
 			"Enabling this will ensure there is only one active controller manager.")
 
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
-	flag.StringVar(&workloadClusterBaseDomain, "workload-cluster-basedomain", "", "Domain for workload cluster, e.g. installation.customer.gigantic.io.")
-	flag.StringVar(&managementClusterBaseDomain, "management-cluster-basedomain", "", "Domain for management cluster, e.g. installation.customer.gigantic.io.")
+	flag.StringVar(&baseDomain, "base-domain", "", "Domain for which to create the DNS entries, e.g. customer.gigantic.io.")
 
 	flag.Parse()
 
@@ -79,11 +77,10 @@ func main() {
 	}
 
 	if err = (&controllers.OpenstackClusterReconciler{
-		Client:                      mgr.GetClient(),
-		Log:                         ctrl.Log.WithName("controllers").WithName("OpenstackCluster"),
-		ManagementClusterBaseDomain: managementClusterBaseDomain,
-		WorkloadClusterBaseDomain:   workloadClusterBaseDomain,
-		Scheme:                      mgr.GetScheme(),
+		Client:     mgr.GetClient(),
+		Log:        ctrl.Log.WithName("controllers").WithName("OpenstackCluster"),
+		BaseDomain: baseDomain,
+		Scheme:     mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "OpenstackCluster")
 		os.Exit(1)

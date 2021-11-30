@@ -42,10 +42,9 @@ import (
 type OpenstackClusterReconciler struct {
 	client.Client
 
-	Log                         logr.Logger
-	ManagementClusterBaseDomain string
-	WorkloadClusterBaseDomain   string
-	Scheme                      *runtime.Scheme
+	Log        logr.Logger
+	BaseDomain string
+	Scheme     *runtime.Scheme
 }
 
 // +kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=openstackclusters,verbs=get;list;watch;create;update;patch;delete
@@ -83,10 +82,9 @@ func (r *OpenstackClusterReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 	// Create the cluster scope.
 	clusterScope, err := scope.NewClusterScope(scope.ClusterScopeParams{
-		BaseDomain:                  r.WorkloadClusterBaseDomain,
-		ManagementClusterBaseDomain: r.ManagementClusterBaseDomain,
-		Logger:                      log,
-		OpenstackCluster:            openstackCluster,
+		BaseDomain:       r.BaseDomain,
+		Logger:           log,
+		OpenstackCluster: openstackCluster,
 	})
 	if err != nil {
 		return reconcile.Result{}, errors.Errorf("failed to create scope: %+v", err)

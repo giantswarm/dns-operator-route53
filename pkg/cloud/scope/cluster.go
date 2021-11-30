@@ -10,11 +10,10 @@ import (
 
 // ClusterScopeParams defines the input parameters used to create a new Scope.
 type ClusterScopeParams struct {
-	OpenstackCluster            *infrav1.OpenStackCluster
-	BaseDomain                  string
-	ManagementClusterBaseDomain string
-	Logger                      logr.Logger
-	Session                     awsclient.ConfigProvider
+	OpenstackCluster *infrav1.OpenStackCluster
+	BaseDomain       string
+	Logger           logr.Logger
+	Session          awsclient.ConfigProvider
 }
 
 // NewClusterScope creates a new Scope from the supplied parameters.
@@ -30,21 +29,16 @@ func NewClusterScope(params ClusterScopeParams) (*ClusterScope, error) {
 		params.Logger = klogr.New()
 	}
 
-	if params.ManagementClusterBaseDomain == "" {
-		return nil, errors.New("failed to generate new scope from emtpy string ManagementClusterBaseDomain")
-	}
-
 	session, err := sessionForCluster(params.OpenstackCluster.Name)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create aws session")
 	}
 
 	return &ClusterScope{
-		openstackCluster:            params.OpenstackCluster,
-		baseDomain:                  params.BaseDomain,
-		Logger:                      params.Logger,
-		managementClusterBaseDomain: params.ManagementClusterBaseDomain,
-		session:                     session,
+		openstackCluster: params.OpenstackCluster,
+		baseDomain:       params.BaseDomain,
+		Logger:           params.Logger,
+		session:          session,
 	}, nil
 }
 
@@ -53,8 +47,7 @@ type ClusterScope struct {
 	openstackCluster *infrav1.OpenStackCluster
 	baseDomain       string
 	logr.Logger
-	managementClusterBaseDomain string
-	session                     awsclient.ConfigProvider
+	session awsclient.ConfigProvider
 }
 
 // APIEndpoint returns the AWS infrastructure Kubernetes API endpoint.
@@ -70,11 +63,6 @@ func (s *ClusterScope) BaseDomain() string {
 // Cluster returns the OpenStack infrastructure cluster.
 func (s *ClusterScope) Cluster() *infrav1.OpenStackCluster {
 	return s.openstackCluster
-}
-
-// ManagementClusterBaseDomain returns the workload cluster basedomain.
-func (s *ClusterScope) ManagementClusterBaseDomain() string {
-	return s.managementClusterBaseDomain
 }
 
 // Name returns the AWS infrastructure cluster name.
