@@ -1,4 +1,4 @@
 ---
 accessKeyID: ""
 secretAccessKey: ""
-managementClusterBaseDomain: ""
+baseDomain: ""
