@@ -122,14 +122,6 @@ func (r *OpenstackClusterReconciler) reconcileNormal(ctx context.Context, cluste
 		return reconcile.Result{}, err
 	}
 
-	// OpenStackCluster doesn't implement conditions.Setter like aws and azure ones.
-	// TODO: check how critical this is
-	// conditions.MarkTrue(openstackCluster, key.DNSZoneReady)
-	// err := r.Client.Status().Update(ctx, openstackCluster)
-	// if err != nil {
-	// 	return reconcile.Result{}, err
-	// }
-
 	return ctrl.Result{
 		Requeue:      true,
 		RequeueAfter: time.Minute * 5,
