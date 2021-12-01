@@ -17,7 +17,7 @@ type ClusterObject interface {
 	conditions.Setter
 }
 
-// ClusterScoper is the interface for a workload cluster scope
+// ClusterScoper is the interface for a cluster scope
 type ClusterScoper interface {
 	logr.Logger
 	Session
@@ -25,7 +25,7 @@ type ClusterScoper interface {
 	// APIEndpoint returns the AWS infrastructure Kubernetes LoadBalancer API endpoint.
 	// e.g. apiserver-x.eu-central-1.elb.amazonaws.com
 	APIEndpoint() string
-	// BaseDomain returns workload cluster domain. This could be the same domain like management cluster or something a different one.
+	// BaseDomain returns the base domain.
 	BaseDomain() string
 	// Cluster returns the AWS infrastructure cluster object.
 	Cluster() *infrav1.OpenStackCluster

@@ -12,25 +12,25 @@ import (
 
 func (s *Service) DeleteRoute53() error {
 	s.scope.V(2).Info("Deleting hosted DNS zone")
-	hostedZoneID, err := s.describeWorkloadClusterZone()
+	hostedZoneID, err := s.describeClusterHostedZone()
 	if IsNotFound(err) {
 		return nil
 	} else if err != nil {
 		return err
 	}
 
-	// First delete delegation record from managament
-	if err := s.changeManagementClusterDelegation("DELETE"); err != nil {
+	// First delete delegation record in base hosted zone
+	if err := s.changeClusterNSDelegation("DELETE"); err != nil {
 		return err
 	}
 
 	// We need to delete all records first before we can delete the hosted zone
-	if err := s.changeWorkloadClusterRecords("DELETE"); err != nil {
+	if err := s.changeClusterRecords("DELETE"); err != nil {
 		return err
 	}
 
-	// Finally delete DNS zone for workload cluster
-	err = s.deleteWorkloadClusterZone(hostedZoneID)
+	// Finally delete DNS zone for cluster
+	err = s.deleteClusterHostedZone(hostedZoneID)
 	if err != nil {
 		return err
 	}
@@ -42,9 +42,9 @@ func (s *Service) ReconcileRoute53() error {
 	s.scope.V(2).Info("Reconciling hosted DNS zone")
 
 	// Describe or create.
-	_, err := s.describeWorkloadClusterZone()
+	_, err := s.describeClusterHostedZone()
 	if IsNotFound(err) {
-		err = s.createWorkloadClusterZone()
+		err = s.createClusterHostedZone()
 		if err != nil {
 			return err
 		}
@@ -53,14 +53,14 @@ func (s *Service) ReconcileRoute53() error {
 		return err
 	}
 
-	err = s.changeWorkloadClusterRecords("CREATE")
+	err = s.changeClusterRecords("CREATE")
 	if IsNotFound(err) {
 		// Fall through
 	} else if err != nil {
 		return err
 	}
 
-	err = s.changeManagementClusterDelegation("CREATE")
+	err = s.changeClusterNSDelegation("CREATE")
 	if IsNotFound(err) {
 		return nil
 	} else if err != nil {
@@ -70,7 +70,7 @@ func (s *Service) ReconcileRoute53() error {
 	return nil
 }
 
-func (s *Service) describeWorkloadClusterZone() (string, error) {
+func (s *Service) describeClusterHostedZone() (string, error) {
 	// Search host zone by DNSName
 	input := &route53.ListHostedZonesByNameInput{
 		DNSName: aws.String(fmt.Sprintf("%s.%s", s.scope.Name(), s.scope.BaseDomain())),
@@ -90,8 +90,8 @@ func (s *Service) describeWorkloadClusterZone() (string, error) {
 	return *out.HostedZones[0].Id, nil
 }
 
-func (s *Service) listWorkloadClusterNSRecords() ([]*route53.ResourceRecord, error) {
-	hostZoneID, err := s.describeWorkloadClusterZone()
+func (s *Service) listClusterNSRecords() ([]*route53.ResourceRecord, error) {
+	hostZoneID, err := s.describeClusterHostedZone()
 	if err != nil {
 		return nil, err
 	}
@@ -109,14 +109,14 @@ func (s *Service) listWorkloadClusterNSRecords() ([]*route53.ResourceRecord, err
 	return output.ResourceRecordSets[0].ResourceRecords, nil
 }
 
-func (s *Service) changeWorkloadClusterRecords(action string) error {
+func (s *Service) changeClusterRecords(action string) error {
 	s.scope.Info(s.scope.APIEndpoint())
 	if s.scope.APIEndpoint() == "" {
 		s.scope.Info("API endpoint is not ready yet.")
 		return aws.ErrMissingEndpoint
 	}
 
-	hostZoneID, err := s.describeWorkloadClusterZone()
+	hostZoneID, err := s.describeClusterHostedZone()
 	if err != nil {
 		return err
 	}
@@ -162,7 +162,7 @@ func (s *Service) changeWorkloadClusterRecords(action string) error {
 	return nil
 }
 
-func (s *Service) describeManagementClusterZone() (string, error) {
+func (s *Service) describeBaseHostedZone() (string, error) {
 	input := &route53.ListHostedZonesByNameInput{
 		DNSName: aws.String(s.scope.BaseDomain()),
 	}
@@ -182,13 +182,13 @@ func (s *Service) describeManagementClusterZone() (string, error) {
 	return *out.HostedZones[0].Id, nil
 }
 
-func (s *Service) changeManagementClusterDelegation(action string) error {
-	hostZoneID, err := s.describeManagementClusterZone()
+func (s *Service) changeClusterNSDelegation(action string) error {
+	hostZoneID, err := s.describeBaseHostedZone()
 	if err != nil {
 		return err
 	}
 
-	records, err := s.listWorkloadClusterNSRecords()
+	records, err := s.listClusterNSRecords()
 	if err != nil {
 		return err
 	}
@@ -217,7 +217,7 @@ func (s *Service) changeManagementClusterDelegation(action string) error {
 	return nil
 }
 
-func (s *Service) createWorkloadClusterZone() error {
+func (s *Service) createClusterHostedZone() error {
 	now := time.Now()
 	input := &route53.CreateHostedZoneInput{
 		CallerReference: aws.String(now.UTC().String()),
@@ -230,7 +230,7 @@ func (s *Service) createWorkloadClusterZone() error {
 	return nil
 }
 
-func (s *Service) deleteWorkloadClusterZone(hostedZoneID string) error {
+func (s *Service) deleteClusterHostedZone(hostedZoneID string) error {
 	input := &route53.DeleteHostedZoneInput{
 		Id: aws.String(hostedZoneID),
 	}

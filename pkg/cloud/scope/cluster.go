@@ -56,7 +56,7 @@ func (s *ClusterScope) APIEndpoint() string {
 	return s.openstackCluster.Spec.ControlPlaneEndpoint.Host
 }
 
-// BaseDomain returns the workload cluster basedomain.
+// BaseDomain returns the cluster basedomain.
 func (s *ClusterScope) BaseDomain() string {
 	return s.baseDomain
 }
@@ -71,7 +71,7 @@ func (s *ClusterScope) Name() string {
 	return s.openstackCluster.Name
 }
 
-// Session returns the AWS SDK session. Used for creating workload cluster client.
+// Session returns the AWS SDK session. Used for creating cluster client.
 func (s *ClusterScope) Session() awsclient.ConfigProvider {
 	return s.session
 }
