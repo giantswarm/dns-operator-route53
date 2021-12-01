@@ -164,7 +164,7 @@ func (s *Service) changeWorkloadClusterRecords(action string) error {
 
 func (s *Service) describeManagementClusterZone() (string, error) {
 	input := &route53.ListHostedZonesByNameInput{
-		DNSName: aws.String(s.scope.ManagementClusterBaseDomain()),
+		DNSName: aws.String(s.scope.BaseDomain()),
 	}
 	out, err := s.Route53Client.ListHostedZonesByName(input)
 	if err != nil {
@@ -175,7 +175,7 @@ func (s *Service) describeManagementClusterZone() (string, error) {
 		return "", &Route53Error{Code: http.StatusNotFound, msg: route53.ErrCodeHostedZoneNotFound}
 	}
 
-	if *out.HostedZones[0].Name != fmt.Sprintf("%s.", s.scope.ManagementClusterBaseDomain()) {
+	if *out.HostedZones[0].Name != fmt.Sprintf("%s.", s.scope.BaseDomain()) {
 		return "", &Route53Error{Code: http.StatusNotFound, msg: route53.ErrCodeHostedZoneNotFound}
 	}
 
@@ -200,7 +200,7 @@ func (s *Service) changeManagementClusterDelegation(action string) error {
 				{
 					Action: aws.String(action),
 					ResourceRecordSet: &route53.ResourceRecordSet{
-						Name:            aws.String(fmt.Sprintf("%s.%s", s.scope.Name(), s.scope.ManagementClusterBaseDomain())),
+						Name:            aws.String(fmt.Sprintf("%s.%s", s.scope.Name(), s.scope.BaseDomain())),
 						Type:            aws.String("NS"),
 						TTL:             aws.Int64(300),
 						ResourceRecords: records,
