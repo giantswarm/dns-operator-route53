@@ -10,6 +10,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	TTL = 300
+)
+
 func (s *Service) DeleteRoute53() error {
 	s.scope.V(2).Info("Deleting hosted DNS zone")
 	hostedZoneID, err := s.describeClusterHostedZone()
@@ -130,7 +134,7 @@ func (s *Service) changeClusterRecords(action string) error {
 					ResourceRecordSet: &route53.ResourceRecordSet{
 						Name: aws.String(fmt.Sprintf("*.%s.%s", s.scope.Name(), s.scope.BaseDomain())),
 						Type: aws.String("CNAME"),
-						TTL:  aws.Int64(300),
+						TTL:  aws.Int64(TTL),
 						ResourceRecords: []*route53.ResourceRecord{
 							{
 								Value: aws.String(fmt.Sprintf("ingress.%s.%s", s.scope.Name(), s.scope.BaseDomain())),
@@ -143,7 +147,7 @@ func (s *Service) changeClusterRecords(action string) error {
 					ResourceRecordSet: &route53.ResourceRecordSet{
 						Name: aws.String(fmt.Sprintf("api.%s.%s", s.scope.Name(), s.scope.BaseDomain())),
 						Type: aws.String("A"),
-						TTL:  aws.Int64(300),
+						TTL:  aws.Int64(TTL),
 						ResourceRecords: []*route53.ResourceRecord{
 							{
 								Value: aws.String(s.scope.APIEndpoint()),
@@ -202,7 +206,7 @@ func (s *Service) changeClusterNSDelegation(action string) error {
 					ResourceRecordSet: &route53.ResourceRecordSet{
 						Name:            aws.String(fmt.Sprintf("%s.%s", s.scope.Name(), s.scope.BaseDomain())),
 						Type:            aws.String("NS"),
-						TTL:             aws.Int64(300),
+						TTL:             aws.Int64(TTL),
 						ResourceRecords: records,
 					},
 				},

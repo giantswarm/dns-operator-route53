@@ -3,7 +3,7 @@ package cloud
 import (
 	awsclient "github.com/aws/aws-sdk-go/aws/client"
 	"github.com/go-logr/logr"
-	infrav1 "sigs.k8s.io/cluster-api-provider-openstack/api/v1alpha4"
+	capo "sigs.k8s.io/cluster-api-provider-openstack/api/v1alpha4"
 	"sigs.k8s.io/cluster-api/util/conditions"
 )
 
@@ -28,7 +28,7 @@ type ClusterScoper interface {
 	// BaseDomain returns the base domain.
 	BaseDomain() string
 	// Cluster returns the AWS infrastructure cluster object.
-	Cluster() *infrav1.OpenStackCluster
+	Cluster() *capo.OpenStackCluster
 	// Name returns the CAPI cluster name.
 	Name() string
 }
