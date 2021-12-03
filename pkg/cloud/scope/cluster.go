@@ -6,12 +6,12 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"k8s.io/klog/klogr"
-	infrav1 "sigs.k8s.io/cluster-api-provider-openstack/api/v1alpha4"
+	capo "sigs.k8s.io/cluster-api-provider-openstack/api/v1alpha4"
 )
 
 // ClusterScopeParams defines the input parameters used to create a new Scope.
 type ClusterScopeParams struct {
-	OpenstackCluster *infrav1.OpenStackCluster
+	OpenstackCluster *capo.OpenStackCluster
 	BaseDomain       string
 	Logger           logr.Logger
 	Session          awsclient.ConfigProvider
@@ -45,7 +45,7 @@ func NewClusterScope(params ClusterScopeParams) (*ClusterScope, error) {
 
 // ClusterScope defines the basic context for an actuator to operate upon.
 type ClusterScope struct {
-	openstackCluster *infrav1.OpenStackCluster
+	openstackCluster *capo.OpenStackCluster
 	baseDomain       string
 	logr.Logger
 	session awsclient.ConfigProvider
@@ -62,7 +62,7 @@ func (s *ClusterScope) BaseDomain() string {
 }
 
 // Cluster returns the OpenStack infrastructure cluster.
-func (s *ClusterScope) Cluster() *infrav1.OpenStackCluster {
+func (s *ClusterScope) Cluster() *capo.OpenStackCluster {
 	return s.openstackCluster
 }
 
