@@ -19,6 +19,11 @@ import (
 	capo "sigs.k8s.io/cluster-api-provider-openstack/api/v1alpha4"
 )
 
+const (
+	KubeConfigSecretSuffix = "-kubeconfig"
+	KubeConfigSecretKey    = "value"
+)
+
 // ClusterScopeParams defines the input parameters used to create a new Scope.
 type ClusterScopeParams struct {
 	OpenstackCluster *capo.OpenStackCluster
@@ -99,67 +104,48 @@ func (s *ClusterScope) Session() awsclient.ConfigProvider {
 }
 
 func getClusterK8sClient(cluster *capo.OpenStackCluster) (kubernetes.Interface, error) {
-	k8sClient, err := getK8sClient()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get kubernetes client")
-	}
-
-	secret, err := k8sClient.CoreV1().Secrets(cluster.Namespace).Get(context.Background(), fmt.Sprintf("%s-kubeconfig", cluster.Name), metav1.GetOptions{})
-	if err != nil {
-		return nil, microerror.Mask(err)
-	}
-
 	newLogger, err := micrologger.New(micrologger.Config{})
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
 
-	var restConfig *rest.Config
-	{
-		c := k8srestconfig.Config{
-			Logger: newLogger,
-
-			KubeConfig: string(secret.Data["value"]),
-		}
-
-		restConfig, err = k8srestconfig.New(c)
-		if err != nil {
-			return nil, microerror.Mask(err)
-		}
+	kubeconfig, err := getClusterKubeConfig(cluster, newLogger)
+	if err != nil {
+		return nil, microerror.Mask(err)
 	}
 
-	var clusterK8sClients k8sclient.Interface
-	{
-		c := k8sclient.ClientsConfig{
-			Logger: newLogger,
-
-			RestConfig: restConfig,
-		}
-
-		clusterK8sClients, err = k8sclient.NewClients(c)
-		if err != nil {
-			return nil, microerror.Mask(err)
-		}
+	config := k8srestconfig.Config{
+		Logger:     newLogger,
+		KubeConfig: kubeconfig,
 	}
 
-	return clusterK8sClients.K8sClient(), nil
+	return getK8sClient(config, newLogger)
 }
 
-func getK8sClient() (kubernetes.Interface, error) {
-	newLogger, err := micrologger.New(micrologger.Config{})
-	if err != nil {
-		return nil, microerror.Mask(err)
+func getClusterKubeConfig(cluster *capo.OpenStackCluster, logger micrologger.Logger) (string, error) {
+	config := k8srestconfig.Config{
+		Logger:    logger,
+		InCluster: true,
 	}
 
+	k8sClient, err := getK8sClient(config, logger)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get kubernetes client")
+	}
+
+	secret, err := k8sClient.CoreV1().Secrets(cluster.Namespace).Get(context.Background(), fmt.Sprintf("%s-%s", cluster.Name, KubeConfigSecretSuffix), metav1.GetOptions{})
+	if err != nil {
+		return "", microerror.Mask(err)
+	}
+
+	return string(secret.Data[KubeConfigSecretKey]), nil
+}
+
+func getK8sClient(config k8srestconfig.Config, logger micrologger.Logger) (kubernetes.Interface, error) {
 	var restConfig *rest.Config
+	var err error
 	{
-		c := k8srestconfig.Config{
-			Logger: newLogger,
-
-			InCluster: true,
-		}
-
-		restConfig, err = k8srestconfig.New(c)
+		restConfig, err = k8srestconfig.New(config)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
@@ -168,7 +154,7 @@ func getK8sClient() (kubernetes.Interface, error) {
 	var k8sClients *k8sclient.Clients
 	{
 		c := k8sclient.ClientsConfig{
-			Logger:     newLogger,
+			Logger:     logger,
 			RestConfig: restConfig,
 		}
 
@@ -179,5 +165,4 @@ func getK8sClient() (kubernetes.Interface, error) {
 
 		return k8sClients.K8sClient(), nil
 	}
-
 }

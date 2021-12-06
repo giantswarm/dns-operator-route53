@@ -13,7 +13,9 @@ import (
 )
 
 const (
-	TTL = 300
+	IngressAppPrefix    = ""
+	IngressAppNamespace = "kube-system"
+	TTL                 = 300
 )
 
 func (s *Service) DeleteRoute53() error {
@@ -25,17 +27,17 @@ func (s *Service) DeleteRoute53() error {
 		return err
 	}
 
-	// First delete delegation record in base hosted zone
-	if err := s.changeClusterNSDelegation("DELETE"); err != nil {
-		return err
-	}
-
 	// We need to delete all records first before we can delete the hosted zone
 	if err := s.changeClusterIngressRecords("DELETE"); err != nil {
 		return err
 	}
 
 	if err := s.changeClusterAPIRecords("DELETE"); err != nil {
+		return err
+	}
+
+	// Then delete delegation record in base hosted zone
+	if err := s.changeClusterNSDelegation("DELETE"); err != nil {
 		return err
 	}
 
@@ -63,6 +65,13 @@ func (s *Service) ReconcileRoute53() error {
 		return err
 	}
 
+	err = s.changeClusterNSDelegation("CREATE")
+	if IsNotFound(err) {
+		return nil
+	} else if err != nil {
+		return err
+	}
+
 	err = s.changeClusterAPIRecords("CREATE")
 	if IsNotFound(err) {
 		// Fall through
@@ -73,13 +82,6 @@ func (s *Service) ReconcileRoute53() error {
 	err = s.changeClusterIngressRecords("CREATE")
 	if IsNotFound(err) {
 		// Fall through
-	} else if err != nil {
-		return err
-	}
-
-	err = s.changeClusterNSDelegation("CREATE")
-	if IsNotFound(err) {
-		return nil
 	} else if err != nil {
 		return err
 	}
@@ -298,8 +300,8 @@ func (s *Service) deleteClusterHostedZone(hostedZoneID string) error {
 }
 
 func (s *Service) getIngressIP() (string, error) {
-	serviceName := fmt.Sprintf("nginx-ingress-controller-app-%s", s.scope.Name())
-	icService, err := s.scope.ClusterK8sClient().CoreV1().Services("kube-system").Get(context.Background(), serviceName, metav1.GetOptions{})
+	serviceName := fmt.Sprintf("%s-%s", IngressAppPrefix, s.scope.Name())
+	icService, err := s.scope.ClusterK8sClient().CoreV1().Services(IngressAppNamespace).Get(context.Background(), serviceName, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
