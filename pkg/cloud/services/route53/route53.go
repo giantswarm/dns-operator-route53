@@ -1,6 +1,7 @@
 package route53
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -8,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/route53"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -29,7 +31,11 @@ func (s *Service) DeleteRoute53() error {
 	}
 
 	// We need to delete all records first before we can delete the hosted zone
-	if err := s.changeClusterRecords("DELETE"); err != nil {
+	if err := s.changeClusterIngressRecords("DELETE"); err != nil {
+		return err
+	}
+
+	if err := s.changeClusterAPIRecords("DELETE"); err != nil {
 		return err
 	}
 
@@ -57,7 +63,14 @@ func (s *Service) ReconcileRoute53() error {
 		return err
 	}
 
-	err = s.changeClusterRecords("CREATE")
+	err = s.changeClusterAPIRecords("CREATE")
+	if IsNotFound(err) {
+		// Fall through
+	} else if err != nil {
+		return err
+	}
+
+	err = s.changeClusterIngressRecords("CREATE")
 	if IsNotFound(err) {
 		// Fall through
 	} else if err != nil {
@@ -113,7 +126,7 @@ func (s *Service) listClusterNSRecords() ([]*route53.ResourceRecord, error) {
 	return output.ResourceRecordSets[0].ResourceRecords, nil
 }
 
-func (s *Service) changeClusterRecords(action string) error {
+func (s *Service) changeClusterAPIRecords(action string) error {
 	s.scope.Info(s.scope.APIEndpoint())
 	if s.scope.APIEndpoint() == "" {
 		s.scope.Info("API endpoint is not ready yet.")
@@ -132,12 +145,51 @@ func (s *Service) changeClusterRecords(action string) error {
 				{
 					Action: aws.String(action),
 					ResourceRecordSet: &route53.ResourceRecordSet{
-						Name: aws.String(fmt.Sprintf("*.%s.%s", s.scope.Name(), s.scope.BaseDomain())),
-						Type: aws.String("CNAME"),
+						Name: aws.String(fmt.Sprintf("api.%s.%s", s.scope.Name(), s.scope.BaseDomain())),
+						Type: aws.String("A"),
+						TTL:  aws.Int64(300),
+						ResourceRecords: []*route53.ResourceRecord{
+							{
+								Value: aws.String(s.scope.APIEndpoint()),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, err = s.Route53Client.ChangeResourceRecordSets(input)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Service) changeClusterIngressRecords(action string) error {
+	hostZoneID, err := s.describeClusterHostedZone()
+	if err != nil {
+		return err
+	}
+
+	ip, err := s.getIngressIP()
+	if err != nil {
+		return err
+	}
+
+	input := &route53.ChangeResourceRecordSetsInput{
+		HostedZoneId: aws.String(hostZoneID),
+		ChangeBatch: &route53.ChangeBatch{
+			Changes: []*route53.Change{
+				{
+					Action: aws.String(action),
+					ResourceRecordSet: &route53.ResourceRecordSet{
+						Name: aws.String(fmt.Sprintf("ingress.%s.%s", s.scope.Name(), s.scope.BaseDomain())),
+						Type: aws.String("A"),
 						TTL:  aws.Int64(TTL),
 						ResourceRecords: []*route53.ResourceRecord{
 							{
-								Value: aws.String(fmt.Sprintf("ingress.%s.%s", s.scope.Name(), s.scope.BaseDomain())),
+								Value: aws.String(ip),
 							},
 						},
 					},
@@ -145,12 +197,12 @@ func (s *Service) changeClusterRecords(action string) error {
 				{
 					Action: aws.String(action),
 					ResourceRecordSet: &route53.ResourceRecordSet{
-						Name: aws.String(fmt.Sprintf("api.%s.%s", s.scope.Name(), s.scope.BaseDomain())),
-						Type: aws.String("A"),
-						TTL:  aws.Int64(TTL),
+						Name: aws.String(fmt.Sprintf("*.%s.%s", s.scope.Name(), s.scope.BaseDomain())),
+						Type: aws.String("CNAME"),
+						TTL:  aws.Int64(300),
 						ResourceRecords: []*route53.ResourceRecord{
 							{
-								Value: aws.String(s.scope.APIEndpoint()),
+								Value: aws.String(fmt.Sprintf("ingress.%s.%s", s.scope.Name(), s.scope.BaseDomain())),
 							},
 						},
 					},
@@ -243,4 +295,14 @@ func (s *Service) deleteClusterHostedZone(hostedZoneID string) error {
 		return errors.Wrapf(err, "failed to delete hosted zone for cluster: %s", s.scope.Name())
 	}
 	return nil
+}
+
+func (s *Service) getIngressIP() (string, error) {
+	icService, err := s.scope.ClusterK8sClient().CoreV1().Services("kube-system").Get(context.Background(), "nginx-ingress-controller", metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+
+	return icService.Status.LoadBalancer.Ingress[0].IP, nil
+
 }

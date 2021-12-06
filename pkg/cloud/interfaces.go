@@ -3,6 +3,7 @@ package cloud
 import (
 	awsclient "github.com/aws/aws-sdk-go/aws/client"
 	"github.com/go-logr/logr"
+	"k8s.io/client-go/kubernetes"
 	capo "sigs.k8s.io/cluster-api-provider-openstack/api/v1alpha4"
 	"sigs.k8s.io/cluster-api/util/conditions"
 )
@@ -29,6 +30,8 @@ type ClusterScoper interface {
 	BaseDomain() string
 	// Cluster returns the AWS infrastructure cluster object.
 	Cluster() *capo.OpenStackCluster
+	// ClusterK8sClient returns a client to interact with the cluster.
+	ClusterK8sClient() kubernetes.Interface
 	// Name returns the CAPI cluster name.
 	Name() string
 }
