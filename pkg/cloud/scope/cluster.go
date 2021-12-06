@@ -2,7 +2,6 @@ package scope
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 
 	awsclient "github.com/aws/aws-sdk-go/aws/client"
@@ -10,6 +9,7 @@ import (
 	"github.com/giantswarm/k8sclient/v6/pkg/k8sclient"
 	"github.com/giantswarm/k8sclient/v6/pkg/k8srestconfig"
 	"github.com/giantswarm/microerror"
+	"github.com/giantswarm/micrologger"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -109,8 +109,7 @@ func getClusterK8sClient(cluster *capo.OpenStackCluster) (kubernetes.Interface, 
 		return nil, microerror.Mask(err)
 	}
 
-	var kubeconfig []byte
-	_, err = base64.StdEncoding.Decode(kubeconfig, secret.Data["value"])
+	newLogger, err := micrologger.New(micrologger.Config{})
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
@@ -118,7 +117,9 @@ func getClusterK8sClient(cluster *capo.OpenStackCluster) (kubernetes.Interface, 
 	var restConfig *rest.Config
 	{
 		c := k8srestconfig.Config{
-			KubeConfig: string(kubeconfig),
+			Logger: newLogger,
+
+			KubeConfig: string(secret.Data["value"]),
 		}
 
 		restConfig, err = k8srestconfig.New(c)
@@ -130,6 +131,8 @@ func getClusterK8sClient(cluster *capo.OpenStackCluster) (kubernetes.Interface, 
 	var clusterK8sClients k8sclient.Interface
 	{
 		c := k8sclient.ClientsConfig{
+			Logger: newLogger,
+
 			RestConfig: restConfig,
 		}
 
@@ -143,10 +146,16 @@ func getClusterK8sClient(cluster *capo.OpenStackCluster) (kubernetes.Interface, 
 }
 
 func getK8sClient() (kubernetes.Interface, error) {
-	var err error
+	newLogger, err := micrologger.New(micrologger.Config{})
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+
 	var restConfig *rest.Config
 	{
 		c := k8srestconfig.Config{
+			Logger: newLogger,
+
 			InCluster: true,
 		}
 
@@ -159,6 +168,7 @@ func getK8sClient() (kubernetes.Interface, error) {
 	var k8sClients *k8sclient.Clients
 	{
 		c := k8sclient.ClientsConfig{
+			Logger:     newLogger,
 			RestConfig: restConfig,
 		}
 
