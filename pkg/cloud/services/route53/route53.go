@@ -298,7 +298,8 @@ func (s *Service) deleteClusterHostedZone(hostedZoneID string) error {
 }
 
 func (s *Service) getIngressIP() (string, error) {
-	icService, err := s.scope.ClusterK8sClient().CoreV1().Services("kube-system").Get(context.Background(), "nginx-ingress-controller", metav1.GetOptions{})
+	serviceName := fmt.Sprintf("nginx-ingress-controller-app-%s", s.scope.Name())
+	icService, err := s.scope.ClusterK8sClient().CoreV1().Services("kube-system").Get(context.Background(), serviceName, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
