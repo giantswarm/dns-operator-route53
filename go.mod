@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/aws/aws-sdk-go v1.40.32
-	github.com/giantswarm/microerror v0.3.0 // indirect
+	github.com/giantswarm/microerror v0.3.0
 	github.com/go-logr/logr v0.4.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.11.0
@@ -16,7 +16,7 @@ require (
 	k8s.io/klog v1.0.0
 	sigs.k8s.io/cluster-api v0.4.0
 	sigs.k8s.io/cluster-api-provider-openstack v0.4.0
-	sigs.k8s.io/controller-runtime v0.10.3-0.20211011182302-43ea648ec318
+	sigs.k8s.io/controller-runtime v0.9.2
 )
 
 replace (
