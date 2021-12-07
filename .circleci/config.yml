@@ -39,46 +39,6 @@ workflows:
           filters:
             tags:
               only: /^v.*/
-    # Ensure that for every commit to master, and for every new release tag,
-    # an image gets pushed to the Aliyun registry.
-    - architect/push-to-docker:
-        name: push-to-aliyun
-        image: "registry-intl.cn-shanghai.aliyuncs.com/giantswarm/dns-operator-openstack"
-        username_envar: "ALIYUN_USERNAME"
-        password_envar: "ALIYUN_PASSWORD"
-        requires:
-          - go-build
-        filters:
-          branches:
-            only: master
-          tags:
-            only: /^v.*/
-
-    # Allow that for every commit (to a branch other than master),
-    # and for every new tag that is not a release tag,
-    # an image _can_ get pushed to the Aliyun registry
-    # if manually approved.
-    - hold-push-to-aliyun-pr:
-        type: approval
-        requires:
-          - go-build
-        filters:
-          branches:
-            ignore: master
-          tags:
-            ignore: /^v.*/
-    - architect/push-to-docker:
-        name: push-to-aliyun-pr
-        image: "registry-intl.cn-shanghai.aliyuncs.com/giantswarm/dns-operator-openstack"
-        username_envar: "ALIYUN_USERNAME"
-        password_envar: "ALIYUN_PASSWORD"
-        requires:
-          - hold-push-to-aliyun-pr
-        filters:
-          branches:
-            ignore: master
-          tags:
-            ignore: /.*/
 
     # Ensure that for every commit
     # there is an app version in the test catalog.
