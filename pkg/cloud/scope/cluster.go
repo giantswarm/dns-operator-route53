@@ -20,6 +20,7 @@ import (
 )
 
 const (
+	/* #nosec G101 */
 	KubeConfigSecretSuffix = "-kubeconfig"
 	KubeConfigSecretKey    = "value"
 )
