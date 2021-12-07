@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/aws/aws-sdk-go v1.40.32
+	github.com/giantswarm/microerror v0.3.0 // indirect
 	github.com/go-logr/logr v0.4.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.11.0

@@ -3,6 +3,7 @@ package scope
 import (
 	awsclient "github.com/aws/aws-sdk-go/aws/client"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/giantswarm/microerror"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"k8s.io/klog/klogr"
@@ -32,7 +33,7 @@ func NewClusterScope(params ClusterScopeParams) (*ClusterScope, error) {
 
 	session, err := session.NewSession()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create aws session")
+		return nil, microerror.Mask(err)
 	}
 
 	return &ClusterScope{
