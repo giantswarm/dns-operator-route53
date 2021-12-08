@@ -8,7 +8,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/route53"
-	"github.com/pkg/errors"
+	"github.com/giantswarm/microerror"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -24,27 +24,27 @@ func (s *Service) DeleteRoute53() error {
 	if IsNotFound(err) {
 		return nil
 	} else if err != nil {
-		return err
+		return microerror.Mask(err)
 	}
 
 	// We need to delete all records first before we can delete the hosted zone
 	if err := s.changeClusterIngressRecords("DELETE"); err != nil {
-		return err
+		return microerror.Mask(err)
 	}
 
 	if err := s.changeClusterAPIRecords("DELETE"); err != nil {
-		return err
+		return microerror.Mask(err)
 	}
 
 	// Then delete delegation record in base hosted zone
 	if err := s.changeClusterNSDelegation("DELETE"); err != nil {
-		return err
+		return microerror.Mask(err)
 	}
 
 	// Finally delete DNS zone for cluster
 	err = s.deleteClusterHostedZone(hostedZoneID)
 	if err != nil {
-		return err
+		return microerror.Mask(err)
 	}
 	s.scope.V(2).Info(fmt.Sprintf("Deleting hosted zone completed successfully for cluster %s", s.scope.Name()))
 	return nil
@@ -58,32 +58,32 @@ func (s *Service) ReconcileRoute53() error {
 	if IsNotFound(err) {
 		err = s.createClusterHostedZone()
 		if err != nil {
-			return err
+			return microerror.Mask(err)
 		}
 		s.scope.Info(fmt.Sprintf("Created new hosted zone for cluster %s", s.scope.Name()))
 	} else if err != nil {
-		return err
+		return microerror.Mask(err)
 	}
 
 	err = s.changeClusterNSDelegation("CREATE")
 	if IsNotFound(err) {
 		return nil
 	} else if err != nil {
-		return err
+		return microerror.Mask(err)
 	}
 
 	err = s.changeClusterAPIRecords("CREATE")
 	if IsNotFound(err) {
 		// Fall through
 	} else if err != nil {
-		return err
+		return microerror.Mask(err)
 	}
 
 	err = s.changeClusterIngressRecords("CREATE")
 	if IsNotFound(err) {
 		// Fall through
 	} else if err != nil {
-		return err
+		return microerror.Mask(err)
 	}
 
 	return nil
@@ -96,7 +96,7 @@ func (s *Service) describeClusterHostedZone() (string, error) {
 	}
 	out, err := s.Route53Client.ListHostedZonesByName(input)
 	if err != nil {
-		return "", err
+		return "", microerror.Mask(err)
 	}
 	if len(out.HostedZones) == 0 {
 		return "", &Route53Error{Code: http.StatusNotFound, msg: route53.ErrCodeHostedZoneNotFound}
@@ -112,7 +112,7 @@ func (s *Service) describeClusterHostedZone() (string, error) {
 func (s *Service) listClusterNSRecords() ([]*route53.ResourceRecord, error) {
 	hostZoneID, err := s.describeClusterHostedZone()
 	if err != nil {
-		return nil, err
+		return nil, microerror.Mask(err)
 	}
 
 	// First entry is always NS record
@@ -123,7 +123,7 @@ func (s *Service) listClusterNSRecords() ([]*route53.ResourceRecord, error) {
 
 	output, err := s.Route53Client.ListResourceRecordSets(input)
 	if err != nil {
-		return nil, err
+		return nil, microerror.Mask(err)
 	}
 	return output.ResourceRecordSets[0].ResourceRecords, nil
 }
@@ -137,7 +137,7 @@ func (s *Service) changeClusterAPIRecords(action string) error {
 
 	hostZoneID, err := s.describeClusterHostedZone()
 	if err != nil {
-		return err
+		return microerror.Mask(err)
 	}
 
 	input := &route53.ChangeResourceRecordSetsInput{
@@ -215,7 +215,7 @@ func (s *Service) changeClusterIngressRecords(action string) error {
 
 	_, err = s.Route53Client.ChangeResourceRecordSets(input)
 	if err != nil {
-		return err
+		return microerror.Mask(err)
 	}
 	return nil
 }
@@ -227,7 +227,7 @@ func (s *Service) describeBaseHostedZone() (string, error) {
 	out, err := s.Route53Client.ListHostedZonesByName(input)
 	if err != nil {
 		s.scope.Info(err.Error())
-		return "", err
+		return "", microerror.Mask(err)
 	}
 	if len(out.HostedZones) == 0 {
 		return "", &Route53Error{Code: http.StatusNotFound, msg: route53.ErrCodeHostedZoneNotFound}
@@ -243,12 +243,12 @@ func (s *Service) describeBaseHostedZone() (string, error) {
 func (s *Service) changeClusterNSDelegation(action string) error {
 	hostZoneID, err := s.describeBaseHostedZone()
 	if err != nil {
-		return err
+		return microerror.Mask(err)
 	}
 
 	records, err := s.listClusterNSRecords()
 	if err != nil {
-		return err
+		return microerror.Mask(err)
 	}
 
 	input := &route53.ChangeResourceRecordSetsInput{
@@ -270,7 +270,7 @@ func (s *Service) changeClusterNSDelegation(action string) error {
 
 	_, err = s.Route53Client.ChangeResourceRecordSets(input)
 	if err != nil {
-		return err
+		return microerror.Mask(err)
 	}
 	return nil
 }
@@ -283,7 +283,7 @@ func (s *Service) createClusterHostedZone() error {
 	}
 	_, err := s.Route53Client.CreateHostedZone(input)
 	if err != nil {
-		return errors.Wrapf(err, "failed to create hosted zone for cluster: %s", s.scope.Name())
+		return microerror.Mask(err)
 	}
 	return nil
 }
@@ -294,7 +294,7 @@ func (s *Service) deleteClusterHostedZone(hostedZoneID string) error {
 	}
 	_, err := s.Route53Client.DeleteHostedZone(input)
 	if err != nil {
-		return errors.Wrapf(err, "failed to delete hosted zone for cluster: %s", s.scope.Name())
+		return microerror.Mask(err)
 	}
 	return nil
 }

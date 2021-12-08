@@ -48,7 +48,7 @@ func NewClusterScope(params ClusterScopeParams) (*ClusterScope, error) {
 
 	session, err := session.NewSession()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create aws session")
+		return nil, microerror.Mask(err)
 	}
 
 	clusterK8sClient, err := getClusterK8sClient(params.OpenstackCluster)
