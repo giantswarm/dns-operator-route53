@@ -134,7 +134,7 @@ func getClusterKubeConfig(cluster *capo.OpenStackCluster, logger micrologger.Log
 		return "", errors.Wrap(err, "failed to get kubernetes client")
 	}
 
-	secret, err := k8sClient.CoreV1().Secrets(cluster.Namespace).Get(context.Background(), fmt.Sprintf("%s-%s", cluster.Name, KubeConfigSecretSuffix), metav1.GetOptions{})
+	secret, err := k8sClient.CoreV1().Secrets(cluster.Namespace).Get(context.Background(), fmt.Sprintf("%s%s", cluster.Name, KubeConfigSecretSuffix), metav1.GetOptions{})
 	if err != nil {
 		return "", microerror.Mask(err)
 	}

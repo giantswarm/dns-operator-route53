@@ -300,7 +300,7 @@ func (s *Service) deleteClusterHostedZone(hostedZoneID string) error {
 }
 
 func (s *Service) getIngressIP() (string, error) {
-	serviceName := fmt.Sprintf("%s-%s", IngressAppPrefix, s.scope.Name())
+	serviceName := fmt.Sprintf("%s%s", IngressAppPrefix, s.scope.Name())
 	icService, err := s.scope.ClusterK8sClient().CoreV1().Services(IngressAppNamespace).Get(context.Background(), serviceName, metav1.GetOptions{})
 	if err != nil {
 		return "", err
