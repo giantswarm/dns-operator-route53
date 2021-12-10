@@ -20,6 +20,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/giantswarm/microerror"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -117,7 +118,11 @@ func (r *OpenstackClusterReconciler) reconcileNormal(ctx context.Context, cluste
 	}
 
 	route53Service := route53.NewService(clusterScope)
-	if err := route53Service.ReconcileRoute53(); err != nil {
+	err := route53Service.ReconcileRoute53()
+	if route53.IsServiceNotReady(err) {
+		clusterScope.Error(err, "error creating route53")
+		return reconcile.Result{Requeue: true}, microerror.Mask(err)
+	} else if err != nil {
 		clusterScope.Error(err, "error creating route53")
 		return reconcile.Result{}, err
 	}

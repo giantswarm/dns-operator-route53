@@ -8,7 +8,9 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/route53"
+	"github.com/giantswarm/microerror"
 	"github.com/pkg/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -302,8 +304,14 @@ func (s *Service) deleteClusterHostedZone(hostedZoneID string) error {
 func (s *Service) getIngressIP() (string, error) {
 	serviceName := fmt.Sprintf("%s%s", IngressAppPrefix, s.scope.Name())
 	icService, err := s.scope.ClusterK8sClient().CoreV1().Services(IngressAppNamespace).Get(context.Background(), serviceName, metav1.GetOptions{})
-	if err != nil {
+	if apierrors.IsNotFound(err) {
 		return "", err
+	} else if err != nil {
+		return "", err
+	}
+
+	if len(icService.Status.LoadBalancer.Ingress) < 1 || icService.Status.LoadBalancer.Ingress[0].IP == "" {
+		return "", microerror.Mask(serviceNotReadyError)
 	}
 
 	return icService.Status.LoadBalancer.Ingress[0].IP, nil

@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/route53"
+	"github.com/giantswarm/microerror"
 	"github.com/pkg/errors"
 
 	"github.com/giantswarm/dns-operator-openstack/pkg/cloud/awserrors"
@@ -84,4 +85,13 @@ func ReasonForError(err error) int {
 		return t.Code
 	}
 	return -1
+}
+
+var serviceNotReadyError = &microerror.Error{
+	Kind: "serviceNotReadyError",
+}
+
+// IsServiceNotReady asserts serviceNotReadyError.
+func IsServiceNotReady(err error) bool {
+	return microerror.Cause(err) == serviceNotReadyError
 }
