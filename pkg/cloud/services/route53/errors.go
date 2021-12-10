@@ -1,6 +1,7 @@
 package route53
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -45,13 +46,16 @@ func NewConflict(msg string) error {
 // IsNotFound returns true if the error was created by NewNotFound.
 func IsNotFound(err error) bool {
 	if ReasonForError(err) == http.StatusNotFound {
+		fmt.Println("first")
 		return true
 	}
 	if err == aws.ErrMissingEndpoint {
+		fmt.Println("second")
 		return true
 	}
 	if code, ok := awserrors.Code(errors.Cause(err)); ok {
 		if code == route53.ErrCodeHostedZoneNotFound || code == route53.ErrCodeInvalidChangeBatch {
+			fmt.Println("third")
 			return true
 		}
 	}

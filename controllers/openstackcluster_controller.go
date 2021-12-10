@@ -20,23 +20,21 @@ import (
 	"context"
 	"time"
 
+	"github.com/giantswarm/dns-operator-openstack/pkg/cloud/scope"
+	"github.com/giantswarm/dns-operator-openstack/pkg/cloud/services/route53"
+	"github.com/giantswarm/dns-operator-openstack/pkg/key"
+
 	"github.com/giantswarm/microerror"
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	capo "sigs.k8s.io/cluster-api-provider-openstack/api/v1alpha4"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
-	"github.com/giantswarm/dns-operator-openstack/pkg/cloud/scope"
-	"github.com/giantswarm/dns-operator-openstack/pkg/cloud/services/route53"
-	"github.com/giantswarm/dns-operator-openstack/pkg/key"
-
-	capo "sigs.k8s.io/cluster-api-provider-openstack/api/v1alpha4"
 )
 
 // OpenstackClusterReconciler reconciles a openstackCluster object
@@ -60,17 +58,17 @@ func (r *OpenstackClusterReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, err
+		return reconcile.Result{}, microerror.Mask(err)
 	}
 
 	// Fetch the Cluster.
 	cluster, err := util.GetOwnerCluster(ctx, r.Client, openstackCluster.ObjectMeta)
 	if err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{}, microerror.Mask(err)
 	}
 	if cluster == nil {
 		log.Info("Cluster Controller has not yet set OwnerRef")
-		return reconcile.Result{}, err
+		return reconcile.Result{}, microerror.Mask(err)
 	}
 
 	log = log.WithValues("cluster", openstackCluster.Name)
@@ -88,7 +86,7 @@ func (r *OpenstackClusterReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		OpenstackCluster: openstackCluster,
 	})
 	if err != nil {
-		return reconcile.Result{}, errors.Errorf("failed to create scope: %+v", err)
+		return reconcile.Result{}, microerror.Mask(err)
 	}
 
 	// Handle deleted clusters
@@ -114,7 +112,7 @@ func (r *OpenstackClusterReconciler) reconcileNormal(ctx context.Context, cluste
 	controllerutil.AddFinalizer(openstackCluster, key.DNSFinalizerName)
 	// Register the finalizer immediately to avoid orphaning openstack resources on delete
 	if err := r.Update(ctx, openstackCluster); err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{}, microerror.Mask(err)
 	}
 
 	route53Service := route53.NewService(clusterScope)
@@ -124,7 +122,7 @@ func (r *OpenstackClusterReconciler) reconcileNormal(ctx context.Context, cluste
 		return reconcile.Result{Requeue: true}, microerror.Mask(err)
 	} else if err != nil {
 		clusterScope.Error(err, "error creating route53")
-		return reconcile.Result{}, err
+		return reconcile.Result{}, microerror.Mask(err)
 	}
 
 	return ctrl.Result{
@@ -140,7 +138,7 @@ func (r *OpenstackClusterReconciler) reconcileDelete(ctx context.Context, cluste
 
 	if err := route53Service.DeleteRoute53(); err != nil {
 		clusterScope.Error(err, "error deleting route53")
-		return reconcile.Result{}, err
+		return reconcile.Result{}, microerror.Mask(err)
 	}
 
 	openstackCluster := clusterScope.Cluster()
@@ -148,7 +146,7 @@ func (r *OpenstackClusterReconciler) reconcileDelete(ctx context.Context, cluste
 	controllerutil.RemoveFinalizer(openstackCluster, key.DNSFinalizerName)
 	// Finally remove the finalizer
 	if err := r.Update(ctx, openstackCluster); err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{}, microerror.Mask(err)
 	}
 
 	return ctrl.Result{
