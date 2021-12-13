@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	IngressAppPrefix    = "nginx-ingress-controller-app-"
+	IngressAppPrefix    = "nginx-ingress-controller-appy-"
 	IngressAppNamespace = "kube-system"
 	TTL                 = 300
 )
