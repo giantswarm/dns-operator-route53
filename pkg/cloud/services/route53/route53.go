@@ -3,12 +3,12 @@ package route53
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/route53"
 	"github.com/giantswarm/microerror"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -67,6 +67,7 @@ func (s *Service) ReconcileRoute53() error {
 
 	err = s.changeClusterNSDelegation("CREATE")
 	if IsNotFound(err) {
+		fmt.Println("THISISIT")
 		return nil
 	} else if err != nil {
 		return microerror.Mask(err)
@@ -96,14 +97,15 @@ func (s *Service) describeClusterHostedZone() (string, error) {
 	}
 	out, err := s.Route53Client.ListHostedZonesByName(input)
 	if err != nil {
-		return "", microerror.Mask(err)
+		return "", wrapRoute53Error(err)
 	}
+
 	if len(out.HostedZones) == 0 {
-		return "", &Route53Error{Code: http.StatusNotFound, msg: route53.ErrCodeHostedZoneNotFound}
+		return "", microerror.Mask(hostedZoneNotFoundError)
 	}
 
 	if *out.HostedZones[0].Name != fmt.Sprintf("%s.%s.", s.scope.Name(), s.scope.BaseDomain()) {
-		return "", &Route53Error{Code: http.StatusNotFound, msg: route53.ErrCodeHostedZoneNotFound}
+		return "", microerror.Mask(hostedZoneNotFoundError)
 	}
 
 	return *out.HostedZones[0].Id, nil
@@ -123,7 +125,7 @@ func (s *Service) listClusterNSRecords() ([]*route53.ResourceRecord, error) {
 
 	output, err := s.Route53Client.ListResourceRecordSets(input)
 	if err != nil {
-		return nil, microerror.Mask(err)
+		return nil, wrapRoute53Error(err)
 	}
 	return output.ResourceRecordSets[0].ResourceRecords, nil
 }
@@ -163,7 +165,7 @@ func (s *Service) changeClusterAPIRecords(action string) error {
 
 	_, err = s.Route53Client.ChangeResourceRecordSets(input)
 	if err != nil {
-		return err
+		return wrapRoute53Error(err)
 	}
 	return nil
 }
@@ -171,12 +173,12 @@ func (s *Service) changeClusterAPIRecords(action string) error {
 func (s *Service) changeClusterIngressRecords(action string) error {
 	hostZoneID, err := s.describeClusterHostedZone()
 	if err != nil {
-		return err
+		return microerror.Mask(err)
 	}
 
 	ip, err := s.getIngressIP()
 	if err != nil {
-		return err
+		return microerror.Mask(err)
 	}
 
 	input := &route53.ChangeResourceRecordSetsInput{
@@ -215,7 +217,7 @@ func (s *Service) changeClusterIngressRecords(action string) error {
 
 	_, err = s.Route53Client.ChangeResourceRecordSets(input)
 	if err != nil {
-		return microerror.Mask(err)
+		return wrapRoute53Error(err)
 	}
 	return nil
 }
@@ -227,14 +229,14 @@ func (s *Service) describeBaseHostedZone() (string, error) {
 	out, err := s.Route53Client.ListHostedZonesByName(input)
 	if err != nil {
 		s.scope.Info(err.Error())
-		return "", microerror.Mask(err)
+		return "", wrapRoute53Error(err)
 	}
 	if len(out.HostedZones) == 0 {
-		return "", &Route53Error{Code: http.StatusNotFound, msg: route53.ErrCodeHostedZoneNotFound}
+		return "", microerror.Mask(hostedZoneNotFoundError)
 	}
 
 	if *out.HostedZones[0].Name != fmt.Sprintf("%s.", s.scope.BaseDomain()) {
-		return "", &Route53Error{Code: http.StatusNotFound, msg: route53.ErrCodeHostedZoneNotFound}
+		return "", microerror.Mask(hostedZoneNotFoundError)
 	}
 
 	return *out.HostedZones[0].Id, nil
@@ -270,7 +272,7 @@ func (s *Service) changeClusterNSDelegation(action string) error {
 
 	_, err = s.Route53Client.ChangeResourceRecordSets(input)
 	if err != nil {
-		return microerror.Mask(err)
+		return wrapRoute53Error(err)
 	}
 	return nil
 }
@@ -283,7 +285,7 @@ func (s *Service) createClusterHostedZone() error {
 	}
 	_, err := s.Route53Client.CreateHostedZone(input)
 	if err != nil {
-		return microerror.Mask(err)
+		return wrapRoute53Error(err)
 	}
 	return nil
 }
@@ -294,7 +296,7 @@ func (s *Service) deleteClusterHostedZone(hostedZoneID string) error {
 	}
 	_, err := s.Route53Client.DeleteHostedZone(input)
 	if err != nil {
-		return microerror.Mask(err)
+		return wrapRoute53Error(err)
 	}
 	return nil
 }
@@ -302,8 +304,14 @@ func (s *Service) deleteClusterHostedZone(hostedZoneID string) error {
 func (s *Service) getIngressIP() (string, error) {
 	serviceName := fmt.Sprintf("%s%s", IngressAppPrefix, s.scope.Name())
 	icService, err := s.scope.ClusterK8sClient().CoreV1().Services(IngressAppNamespace).Get(context.Background(), serviceName, metav1.GetOptions{})
-	if err != nil {
-		return "", err
+	if apierrors.IsNotFound(err) {
+		return "", microerror.Mask(serviceNotReadyError)
+	} else if err != nil {
+		return "", microerror.Mask(err)
+	}
+
+	if len(icService.Status.LoadBalancer.Ingress) < 1 || icService.Status.LoadBalancer.Ingress[0].IP == "" {
+		return "", microerror.Mask(serviceNotReadyError)
 	}
 
 	return icService.Status.LoadBalancer.Ingress[0].IP, nil
