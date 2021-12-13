@@ -67,7 +67,6 @@ func (s *Service) ReconcileRoute53() error {
 
 	err = s.changeClusterNSDelegation("CREATE")
 	if IsNotFound(err) {
-		fmt.Println("THISISIT")
 		return nil
 	} else if err != nil {
 		return microerror.Mask(err)
