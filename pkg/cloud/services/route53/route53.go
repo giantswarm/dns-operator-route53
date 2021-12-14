@@ -304,13 +304,13 @@ func (s *Service) getIngressIP() (string, error) {
 	serviceName := fmt.Sprintf("%s%s", IngressAppPrefix, s.scope.Name())
 	icService, err := s.scope.ClusterK8sClient().CoreV1().Services(IngressAppNamespace).Get(context.Background(), serviceName, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		return "", microerror.Mask(serviceNotReadyError)
+		return "", microerror.Mask(ingressNotReadyError)
 	} else if err != nil {
 		return "", microerror.Mask(err)
 	}
 
 	if len(icService.Status.LoadBalancer.Ingress) < 1 || icService.Status.LoadBalancer.Ingress[0].IP == "" {
-		return "", microerror.Mask(serviceNotReadyError)
+		return "", microerror.Mask(ingressNotReadyError)
 	}
 
 	return icService.Status.LoadBalancer.Ingress[0].IP, nil

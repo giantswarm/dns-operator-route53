@@ -6,4 +6,4 @@ home: "https://github.com/giantswarm/dns-operator-openstack"
 apiVersion: v1
 annotations:
   application.giantswarm.io/team: "rocket"
-  config.giantswarm.io/version: gamma_auto_config
+  config.giantswarm.io/version: 1.x.x

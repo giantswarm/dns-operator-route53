@@ -26,13 +26,13 @@ func IsHostedZoneNotFound(err error) bool {
 	return microerror.Cause(err) == hostedZoneNotFoundError
 }
 
-var serviceNotReadyError = &microerror.Error{
-	Kind: "serviceNotReadyError",
+var ingressNotReadyError = &microerror.Error{
+	Kind: "ingressNotReadyError",
 }
 
-// IsServiceNotReady asserts serviceNotReadyError.
-func IsServiceNotReady(err error) bool {
-	return microerror.Cause(err) == serviceNotReadyError
+// IsIngressNotRead asserts ingressNotReadyError.
+func IsIngressNotReady(err error) bool {
+	return microerror.Cause(err) == ingressNotReadyError
 }
 
 func wrapRoute53Error(err error) error {
