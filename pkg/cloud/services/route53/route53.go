@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	IngressAppPrefix    = "nginx-ingress-controller-appy-"
+	IngressAppPrefix    = "nginx-ingress-controller-app-"
 	IngressAppNamespace = "kube-system"
 	TTL                 = 300
 )
@@ -67,7 +67,7 @@ func (s *Service) ReconcileRoute53() error {
 
 	err = s.changeClusterNSDelegation("CREATE")
 	if IsAlreadyExists(err) {
-		return nil
+		// Fall through
 	} else if err != nil {
 		return microerror.Mask(err)
 	}
