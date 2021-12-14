@@ -3,12 +3,11 @@ module github.com/giantswarm/dns-operator-openstack
 go 1.13
 
 require (
-	github.com/aws/aws-sdk-go v1.40.32
+	github.com/aws/aws-sdk-go v1.42.23
 	github.com/giantswarm/microerror v0.3.0
 	github.com/go-logr/logr v0.4.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.11.0
-	golang.org/x/net v0.0.0-20210716203947-853a461950ff // indirect
 	k8s.io/api v0.22.2
 	k8s.io/apimachinery v0.22.2
 	k8s.io/client-go v0.22.2
