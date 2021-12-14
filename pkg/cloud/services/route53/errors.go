@@ -1,7 +1,6 @@
 package route53
 
 import (
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/route53"
 	"github.com/giantswarm/microerror"
 	"github.com/pkg/errors"
@@ -9,13 +8,13 @@ import (
 	"github.com/giantswarm/dns-operator-openstack/pkg/cloud/awserrors"
 )
 
-var notFoundError = &microerror.Error{
-	Kind: "notFoundError",
+var alreadyExistsError = &microerror.Error{
+	Kind: "alreadyExistsError",
 }
 
-// IsNotFound asserts notFoundError.
-func IsNotFound(err error) bool {
-	return microerror.Cause(err) == notFoundError || microerror.Cause(err) == hostedZoneNotFoundError
+// IsAlreadyExists asserts alreadyExistsError.
+func IsAlreadyExists(err error) bool {
+	return microerror.Cause(err) == alreadyExistsError
 }
 
 var hostedZoneNotFoundError = &microerror.Error{
@@ -37,13 +36,16 @@ func IsServiceNotReady(err error) bool {
 }
 
 func wrapRoute53Error(err error) error {
-	if err == aws.ErrMissingEndpoint {
-		return microerror.Mask(notFoundError)
-	}
+	// if err == aws.ErrMissingEndpoint {
+	// 	return microerror.Mask(notFoundError)
+	// }
 
 	if code, ok := awserrors.Code(errors.Cause(err)); ok {
-		if code == route53.ErrCodeHostedZoneNotFound || code == route53.ErrCodeInvalidChangeBatch {
-			return microerror.Mask(notFoundError)
+		switch code {
+		case route53.ErrCodeHostedZoneNotFound:
+			return microerror.Mask(hostedZoneNotFoundError)
+		case route53.ErrCodeInvalidChangeBatch:
+			return microerror.Mask(alreadyExistsError)
 		}
 	}
 

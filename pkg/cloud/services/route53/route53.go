@@ -21,7 +21,7 @@ const (
 func (s *Service) DeleteRoute53() error {
 	s.scope.V(2).Info("Deleting hosted DNS zone")
 	hostedZoneID, err := s.describeClusterHostedZone()
-	if IsNotFound(err) {
+	if IsHostedZoneNotFound(err) {
 		return nil
 	} else if err != nil {
 		return microerror.Mask(err)
@@ -55,7 +55,7 @@ func (s *Service) ReconcileRoute53() error {
 
 	// Describe or create.
 	_, err := s.describeClusterHostedZone()
-	if IsNotFound(err) {
+	if IsHostedZoneNotFound(err) {
 		err = s.createClusterHostedZone()
 		if err != nil {
 			return microerror.Mask(err)
@@ -66,21 +66,21 @@ func (s *Service) ReconcileRoute53() error {
 	}
 
 	err = s.changeClusterNSDelegation("CREATE")
-	if IsNotFound(err) {
+	if IsAlreadyExists(err) {
 		return nil
 	} else if err != nil {
 		return microerror.Mask(err)
 	}
 
 	err = s.changeClusterAPIRecords("CREATE")
-	if IsNotFound(err) {
+	if IsAlreadyExists(err) {
 		// Fall through
 	} else if err != nil {
 		return microerror.Mask(err)
 	}
 
 	err = s.changeClusterIngressRecords("CREATE")
-	if IsNotFound(err) {
+	if IsAlreadyExists(err) {
 		// Fall through
 	} else if err != nil {
 		return microerror.Mask(err)
