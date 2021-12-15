@@ -34,7 +34,7 @@ type ClusterScopeParams struct {
 
 // NewClusterScope creates a new Scope from the supplied parameters.
 // This is meant to be called for each reconcile iteration.
-func NewClusterScope(params ClusterScopeParams) (*ClusterScope, error) {
+func NewClusterScope(ctx context.Context, params ClusterScopeParams) (*ClusterScope, error) {
 	if params.OpenstackCluster == nil {
 		return nil, microerror.Maskf(invalidConfigError, "failed to generate new scope from nil OpenstackCluster")
 	}
@@ -50,7 +50,7 @@ func NewClusterScope(params ClusterScopeParams) (*ClusterScope, error) {
 		return nil, microerror.Mask(err)
 	}
 
-	clusterK8sClient, err := getClusterK8sClient(params.OpenstackCluster)
+	clusterK8sClient, err := getClusterK8sClient(ctx, params.OpenstackCluster)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
@@ -103,13 +103,13 @@ func (s *ClusterScope) Session() awsclient.ConfigProvider {
 	return s.session
 }
 
-func getClusterK8sClient(cluster *capo.OpenStackCluster) (client.Client, error) {
+func getClusterK8sClient(ctx context.Context, cluster *capo.OpenStackCluster) (client.Client, error) {
 	newLogger, err := micrologger.New(micrologger.Config{})
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
 
-	kubeconfig, err := getClusterKubeConfig(cluster, newLogger)
+	kubeconfig, err := getClusterKubeConfig(ctx, cluster, newLogger)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
@@ -122,7 +122,7 @@ func getClusterK8sClient(cluster *capo.OpenStackCluster) (client.Client, error) 
 	return getK8sClient(config, newLogger)
 }
 
-func getClusterKubeConfig(cluster *capo.OpenStackCluster, logger micrologger.Logger) (string, error) {
+func getClusterKubeConfig(ctx context.Context, cluster *capo.OpenStackCluster, logger micrologger.Logger) (string, error) {
 	config := k8srestconfig.Config{
 		Logger:    logger,
 		InCluster: true,
@@ -140,7 +140,7 @@ func getClusterKubeConfig(cluster *capo.OpenStackCluster, logger micrologger.Log
 		Namespace: cluster.Namespace,
 	}
 
-	if err := k8sClient.Get(context.Background(), o, &secret); err != nil {
+	if err := k8sClient.Get(ctx, o, &secret); err != nil {
 		return "", microerror.Mask(err)
 	}
 

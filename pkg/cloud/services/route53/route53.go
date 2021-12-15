@@ -19,7 +19,7 @@ const (
 	TTL                 = 300
 )
 
-func (s *Service) DeleteRoute53() error {
+func (s *Service) DeleteRoute53(ctx context.Context) error {
 	s.scope.V(2).Info("Deleting hosted DNS zone")
 	hostedZoneID, err := s.describeClusterHostedZone()
 	if IsHostedZoneNotFound(err) {
@@ -29,7 +29,7 @@ func (s *Service) DeleteRoute53() error {
 	}
 
 	// We need to delete all records first before we can delete the hosted zone
-	if err := s.changeClusterIngressRecords("DELETE"); err != nil {
+	if err := s.changeClusterIngressRecords(ctx, "DELETE"); err != nil {
 		return microerror.Mask(err)
 	}
 
@@ -51,7 +51,7 @@ func (s *Service) DeleteRoute53() error {
 	return nil
 }
 
-func (s *Service) ReconcileRoute53() error {
+func (s *Service) ReconcileRoute53(ctx context.Context) error {
 	s.scope.V(2).Info("Reconciling hosted DNS zone")
 
 	// Describe or create.
@@ -80,7 +80,7 @@ func (s *Service) ReconcileRoute53() error {
 		return microerror.Mask(err)
 	}
 
-	err = s.changeClusterIngressRecords("CREATE")
+	err = s.changeClusterIngressRecords(ctx, "CREATE")
 	if IsAlreadyExists(err) {
 		// Fall through
 	} else if err != nil {
@@ -170,13 +170,13 @@ func (s *Service) changeClusterAPIRecords(action string) error {
 	return nil
 }
 
-func (s *Service) changeClusterIngressRecords(action string) error {
+func (s *Service) changeClusterIngressRecords(ctx context.Context, action string) error {
 	hostZoneID, err := s.describeClusterHostedZone()
 	if err != nil {
 		return microerror.Mask(err)
 	}
 
-	ip, err := s.getIngressIP()
+	ip, err := s.getIngressIP(ctx)
 	if err != nil {
 		return microerror.Mask(err)
 	}
@@ -301,7 +301,7 @@ func (s *Service) deleteClusterHostedZone(hostedZoneID string) error {
 	return nil
 }
 
-func (s *Service) getIngressIP() (string, error) {
+func (s *Service) getIngressIP(ctx context.Context) (string, error) {
 	serviceName := fmt.Sprintf("%s%s", IngressAppPrefix, s.scope.Name())
 
 	o := client.ObjectKey{
@@ -311,7 +311,7 @@ func (s *Service) getIngressIP() (string, error) {
 
 	var icService corev1.Service
 
-	err := s.scope.ClusterK8sClient().Get(context.Background(), o, &icService)
+	err := s.scope.ClusterK8sClient().Get(ctx, o, &icService)
 	if apierrors.IsNotFound(err) {
 		return "", microerror.Mask(ingressNotReadyError)
 	} else if err != nil {

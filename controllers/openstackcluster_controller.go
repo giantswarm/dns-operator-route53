@@ -80,7 +80,7 @@ func (r *OpenstackClusterReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 
 	// Create the cluster scope.
-	clusterScope, err := scope.NewClusterScope(scope.ClusterScopeParams{
+	clusterScope, err := scope.NewClusterScope(ctx, scope.ClusterScopeParams{
 		BaseDomain:       r.BaseDomain,
 		Logger:           log,
 		OpenstackCluster: openstackCluster,
@@ -116,7 +116,7 @@ func (r *OpenstackClusterReconciler) reconcileNormal(ctx context.Context, cluste
 	}
 
 	route53Service := route53.NewService(clusterScope)
-	err := route53Service.ReconcileRoute53()
+	err := route53Service.ReconcileRoute53(ctx)
 	if route53.IsIngressNotReady(err) {
 		clusterScope.Error(err, "ingress is not ready yet, requeing")
 		return reconcile.Result{Requeue: true}, microerror.Mask(err)
@@ -136,7 +136,7 @@ func (r *OpenstackClusterReconciler) reconcileDelete(ctx context.Context, cluste
 
 	route53Service := route53.NewService(clusterScope)
 
-	if err := route53Service.DeleteRoute53(); err != nil {
+	if err := route53Service.DeleteRoute53(ctx); err != nil {
 		clusterScope.Error(err, "error deleting route53")
 		return reconcile.Result{}, microerror.Mask(err)
 	}
