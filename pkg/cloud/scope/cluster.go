@@ -11,7 +11,6 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/klogr"
@@ -37,10 +36,10 @@ type ClusterScopeParams struct {
 // This is meant to be called for each reconcile iteration.
 func NewClusterScope(params ClusterScopeParams) (*ClusterScope, error) {
 	if params.OpenstackCluster == nil {
-		return nil, errors.New("failed to generate new scope from nil OpenstackCluster")
+		return nil, microerror.Maskf(invalidConfigError, "failed to generate new scope from nil OpenstackCluster")
 	}
 	if params.BaseDomain == "" {
-		return nil, errors.New("failed to generate new scope from emtpy string BaseDomain")
+		return nil, microerror.Maskf(invalidConfigError, "failed to generate new scope from nil OpenstackCluster")
 	}
 	if params.Logger == nil {
 		params.Logger = klogr.New()
@@ -53,7 +52,7 @@ func NewClusterScope(params ClusterScopeParams) (*ClusterScope, error) {
 
 	clusterK8sClient, err := getClusterK8sClient(params.OpenstackCluster)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get kubernetes client for cluster")
+		return nil, microerror.Mask(err)
 	}
 
 	return &ClusterScope{
@@ -131,7 +130,7 @@ func getClusterKubeConfig(cluster *capo.OpenStackCluster, logger micrologger.Log
 
 	k8sClient, err := getK8sClient(config, logger)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to get kubernetes client")
+		return "", microerror.Mask(err)
 	}
 
 	var secret corev1.Secret
