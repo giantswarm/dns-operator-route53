@@ -5,6 +5,7 @@ import (
 	"github.com/go-logr/logr"
 	capo "sigs.k8s.io/cluster-api-provider-openstack/api/v1alpha4"
 	"sigs.k8s.io/cluster-api/util/conditions"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Session represents an AWS session
@@ -29,6 +30,8 @@ type ClusterScoper interface {
 	BaseDomain() string
 	// Cluster returns the AWS infrastructure cluster object.
 	Cluster() *capo.OpenStackCluster
+	// ClusterK8sClient returns a client to interact with the cluster.
+	ClusterK8sClient() client.Client
 	// Name returns the CAPI cluster name.
 	Name() string
 }
