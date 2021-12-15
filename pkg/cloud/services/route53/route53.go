@@ -179,6 +179,8 @@ func (s *Service) changeClusterIngressRecords(ctx context.Context, action string
 	ip, err := s.getIngressIP(ctx)
 	if err != nil {
 		return microerror.Mask(err)
+	} else if ip == "" {
+		return nil
 	}
 
 	input := &route53.ChangeResourceRecordSetsInput{
@@ -312,8 +314,9 @@ func (s *Service) getIngressIP(ctx context.Context) (string, error) {
 	var icService corev1.Service
 
 	err := s.scope.ClusterK8sClient().Get(ctx, o, &icService)
+	// Ingress service is not installed in this cluster.
 	if apierrors.IsNotFound(err) {
-		return "", microerror.Mask(ingressNotReadyError)
+		return "", nil
 	} else if err != nil {
 		return "", microerror.Mask(err)
 	}
