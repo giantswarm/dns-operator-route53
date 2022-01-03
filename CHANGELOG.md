@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Look up WC kubeconfig based on Cluster name instead of OpenStackCluster name.
 - Update changed DNS record values.
+- Use name from Cluster instead of OpenStackCluster.
 
 ## [0.1.0] - 2021-12-15
 

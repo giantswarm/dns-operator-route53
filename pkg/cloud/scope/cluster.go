@@ -106,7 +106,7 @@ func (s *ClusterScope) ClusterK8sClient() client.Client {
 
 // Name returns the AWS infrastructure cluster name.
 func (s *ClusterScope) Name() string {
-	return s.infraCluster.Name
+	return s.coreCluster.Name
 }
 
 // Session returns the AWS SDK session. Used for creating cluster client.
