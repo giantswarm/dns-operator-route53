@@ -95,7 +95,7 @@ func (s *ClusterScope) InfrastructureCluster() *capo.OpenStackCluster {
 
 // ClusterK8sClient returns a client to interact with the cluster.
 func (s *ClusterScope) ClusterK8sClient(ctx context.Context) (client.Client, error) {
-	if s.k8sClient != nil {
+	if s.k8sClient == nil {
 		var err error
 		s.k8sClient, err = getClusterK8sClient(ctx, s.coreCluster)
 		if err != nil {
