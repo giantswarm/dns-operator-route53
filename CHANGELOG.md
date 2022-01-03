@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add core Cluster to scope in addition to infrastructure cluster.
+
+### Changed
+
+- Rename scope OpenStackCluster to InfrastructureCluster for consistency.
+
+### Fixed
+
+- Look up WC kubeconfig based on Cluster name instead of OpenStackCluster name.
+
 ## [0.1.0] - 2021-12-15
 
 ### Added

@@ -15,6 +15,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/klogr"
 	capo "sigs.k8s.io/cluster-api-provider-openstack/api/v1alpha4"
+	capi "sigs.k8s.io/cluster-api/api/v1alpha4"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -26,56 +27,61 @@ const (
 
 // ClusterScopeParams defines the input parameters used to create a new Scope.
 type ClusterScopeParams struct {
-	OpenstackCluster *capo.OpenStackCluster
-	BaseDomain       string
-	Logger           logr.Logger
-	Session          awsclient.ConfigProvider
+	CoreCluster           *capi.Cluster
+	InfrastructureCluster *capo.OpenStackCluster
+	BaseDomain            string
+	Logger                logr.Logger
 }
 
 // NewClusterScope creates a new Scope from the supplied parameters.
 // This is meant to be called for each reconcile iteration.
 func NewClusterScope(ctx context.Context, params ClusterScopeParams) (*ClusterScope, error) {
-	if params.OpenstackCluster == nil {
-		return nil, microerror.Maskf(invalidConfigError, "failed to generate new scope from nil OpenstackCluster")
+	if params.CoreCluster == nil {
+		return nil, microerror.Maskf(invalidConfigError, "failed to generate new scope from nil CoreCluster")
+	}
+	if params.InfrastructureCluster == nil {
+		return nil, microerror.Maskf(invalidConfigError, "failed to generate new scope from nil InfrastructureCluster")
 	}
 	if params.BaseDomain == "" {
-		return nil, microerror.Maskf(invalidConfigError, "failed to generate new scope from nil OpenstackCluster")
+		return nil, microerror.Maskf(invalidConfigError, "failed to generate new scope from empty BaseDomain")
 	}
 	if params.Logger == nil {
 		params.Logger = klogr.New()
 	}
 
-	session, err := session.NewSession()
+	awsSession, err := session.NewSession()
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
 
-	clusterK8sClient, err := getClusterK8sClient(ctx, params.OpenstackCluster)
+	clusterK8sClient, err := getClusterK8sClient(ctx, params.CoreCluster)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
 
 	return &ClusterScope{
-		openstackCluster: params.OpenstackCluster,
-		baseDomain:       params.BaseDomain,
-		k8sClient:        clusterK8sClient,
-		Logger:           params.Logger,
-		session:          session,
+		coreCluster:  params.CoreCluster,
+		infraCluster: params.InfrastructureCluster,
+		baseDomain:   params.BaseDomain,
+		k8sClient:    clusterK8sClient,
+		Logger:       params.Logger,
+		session:      awsSession,
 	}, nil
 }
 
 // ClusterScope defines the basic context for an actuator to operate upon.
 type ClusterScope struct {
-	openstackCluster *capo.OpenStackCluster
-	baseDomain       string
-	k8sClient        client.Client
+	coreCluster  *capi.Cluster
+	infraCluster *capo.OpenStackCluster
+	baseDomain   string
+	k8sClient    client.Client
 	logr.Logger
 	session awsclient.ConfigProvider
 }
 
 // APIEndpoint returns the AWS infrastructure Kubernetes API endpoint.
 func (s *ClusterScope) APIEndpoint() string {
-	return s.openstackCluster.Spec.ControlPlaneEndpoint.Host
+	return s.infraCluster.Spec.ControlPlaneEndpoint.Host
 }
 
 // BaseDomain returns the cluster basedomain.
@@ -83,9 +89,14 @@ func (s *ClusterScope) BaseDomain() string {
 	return s.baseDomain
 }
 
-// Cluster returns the OpenStack infrastructure cluster.
-func (s *ClusterScope) Cluster() *capo.OpenStackCluster {
-	return s.openstackCluster
+// CoreCluster returns the core cluster.
+func (s *ClusterScope) CoreCluster() *capi.Cluster {
+	return s.coreCluster
+}
+
+// InfrastructureCluster returns the infrastructure cluster.
+func (s *ClusterScope) InfrastructureCluster() *capo.OpenStackCluster {
+	return s.infraCluster
 }
 
 // ClusterK8sClient returns a client to interact with the cluster.
@@ -95,7 +106,7 @@ func (s *ClusterScope) ClusterK8sClient() client.Client {
 
 // Name returns the AWS infrastructure cluster name.
 func (s *ClusterScope) Name() string {
-	return s.openstackCluster.Name
+	return s.infraCluster.Name
 }
 
 // Session returns the AWS SDK session. Used for creating cluster client.
@@ -103,7 +114,7 @@ func (s *ClusterScope) Session() awsclient.ConfigProvider {
 	return s.session
 }
 
-func getClusterK8sClient(ctx context.Context, cluster *capo.OpenStackCluster) (client.Client, error) {
+func getClusterK8sClient(ctx context.Context, cluster *capi.Cluster) (client.Client, error) {
 	newLogger, err := micrologger.New(micrologger.Config{})
 	if err != nil {
 		return nil, microerror.Mask(err)
@@ -122,7 +133,7 @@ func getClusterK8sClient(ctx context.Context, cluster *capo.OpenStackCluster) (c
 	return getK8sClient(config, newLogger)
 }
 
-func getClusterKubeConfig(ctx context.Context, cluster *capo.OpenStackCluster, logger micrologger.Logger) (string, error) {
+func getClusterKubeConfig(ctx context.Context, cluster *capi.Cluster, logger micrologger.Logger) (string, error) {
 	config := k8srestconfig.Config{
 		Logger:    logger,
 		InCluster: true,

@@ -50,10 +50,10 @@ type OpenstackClusterReconciler struct {
 // +kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=openstackclusters/status,verbs=get;update;patch
 
 func (r *OpenstackClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := r.Log.WithValues("openstackluster", req.NamespacedName)
+	log := r.Log.WithValues("openstackcluster", req.NamespacedName)
 
-	openstackCluster := &capo.OpenStackCluster{}
-	err := r.Get(ctx, req.NamespacedName, openstackCluster)
+	var infraCluster capo.OpenStackCluster
+	err := r.Get(ctx, req.NamespacedName, &infraCluster)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
@@ -61,36 +61,37 @@ func (r *OpenstackClusterReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return reconcile.Result{}, microerror.Mask(err)
 	}
 
-	// Fetch the Cluster.
-	cluster, err := util.GetOwnerCluster(ctx, r.Client, openstackCluster.ObjectMeta)
+	// Fetch the owner cluster.
+	coreCluster, err := util.GetOwnerCluster(ctx, r.Client, infraCluster.ObjectMeta)
 	if err != nil {
 		return reconcile.Result{}, microerror.Mask(err)
 	}
-	if cluster == nil {
+	if coreCluster == nil {
 		log.Info("Cluster Controller has not yet set OwnerRef")
 		return reconcile.Result{}, microerror.Mask(err)
 	}
 
-	log = log.WithValues("cluster", openstackCluster.Name)
+	log = log.WithValues("cluster", coreCluster.Name)
 
-	// Return early if the object or Cluster is paused.
-	if annotations.IsPaused(cluster, openstackCluster) {
-		log.Info("openstackCluster or linked Cluster is marked as paused. Won't reconcile")
+	// Return early if the core or infrastructure cluster is paused.
+	if annotations.IsPaused(coreCluster, &infraCluster) {
+		log.Info("infrastructure or core cluster is marked as paused. Won't reconcile")
 		return ctrl.Result{}, nil
 	}
 
 	// Create the cluster scope.
 	clusterScope, err := scope.NewClusterScope(ctx, scope.ClusterScopeParams{
-		BaseDomain:       r.BaseDomain,
-		Logger:           log,
-		OpenstackCluster: openstackCluster,
+		BaseDomain:            r.BaseDomain,
+		Logger:                log,
+		CoreCluster:           coreCluster,
+		InfrastructureCluster: &infraCluster,
 	})
 	if err != nil {
 		return reconcile.Result{}, microerror.Mask(err)
 	}
 
 	// Handle deleted clusters
-	if !openstackCluster.DeletionTimestamp.IsZero() {
+	if !infraCluster.DeletionTimestamp.IsZero() {
 		return r.reconcileDelete(ctx, clusterScope)
 	}
 
@@ -107,7 +108,7 @@ func (r *OpenstackClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *OpenstackClusterReconciler) reconcileNormal(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	clusterScope.Info("Reconciling openstackCluster normal")
 
-	openstackCluster := clusterScope.Cluster()
+	openstackCluster := clusterScope.InfrastructureCluster()
 	// If the openstackCluster doesn't have the finalizer, add it.
 	controllerutil.AddFinalizer(openstackCluster, key.DNSFinalizerName)
 	// Register the finalizer immediately to avoid orphaning openstack resources on delete
@@ -141,7 +142,7 @@ func (r *OpenstackClusterReconciler) reconcileDelete(ctx context.Context, cluste
 		return reconcile.Result{}, microerror.Mask(err)
 	}
 
-	openstackCluster := clusterScope.Cluster()
+	openstackCluster := clusterScope.InfrastructureCluster()
 	// openstackCluster is deleted so remove the finalizer.
 	controllerutil.RemoveFinalizer(openstackCluster, key.DNSFinalizerName)
 	// Finally remove the finalizer

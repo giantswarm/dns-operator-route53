@@ -16,6 +16,6 @@ type Service struct {
 func NewService(clusterScope scope.Route53Scope) *Service {
 	return &Service{
 		scope:         clusterScope,
-		Route53Client: scope.NewRoute53Client(clusterScope, clusterScope.Cluster()),
+		Route53Client: scope.NewRoute53Client(clusterScope, clusterScope.InfrastructureCluster()),
 	}
 }
