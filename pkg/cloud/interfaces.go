@@ -4,6 +4,7 @@ import (
 	awsclient "github.com/aws/aws-sdk-go/aws/client"
 	"github.com/go-logr/logr"
 	capo "sigs.k8s.io/cluster-api-provider-openstack/api/v1alpha4"
+	capi "sigs.k8s.io/cluster-api/api/v1alpha4"
 	"sigs.k8s.io/cluster-api/util/conditions"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -23,15 +24,17 @@ type ClusterScoper interface {
 	logr.Logger
 	Session
 
-	// APIEndpoint returns the AWS infrastructure Kubernetes LoadBalancer API endpoint.
+	// APIEndpoint returns the OpenStack LoadBalancer API endpoint for the cluster.
 	// e.g. apiserver-x.eu-central-1.elb.amazonaws.com
 	APIEndpoint() string
 	// BaseDomain returns the base domain.
 	BaseDomain() string
-	// Cluster returns the AWS infrastructure cluster object.
-	Cluster() *capo.OpenStackCluster
 	// ClusterK8sClient returns a client to interact with the cluster.
 	ClusterK8sClient() client.Client
+	// CoreCluster returns the core cluster object.
+	CoreCluster() *capi.Cluster
+	// InfrastructureCluster returns the infrastructure cluster object.
+	InfrastructureCluster() *capo.OpenStackCluster
 	// Name returns the CAPI cluster name.
 	Name() string
 }
