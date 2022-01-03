@@ -179,11 +179,14 @@ func (s *Service) changeClusterIngressRecords(ctx context.Context, action string
 		return microerror.Mask(err)
 	}
 
-	ip, err := s.getIngressIP(ctx)
-	if err != nil {
-		return microerror.Mask(err)
-	} else if ip == "" {
-		return nil
+	var ingressIP string
+	if action == actionUpsert { // Avoid looking up IP via k8s client when deleting
+		ingressIP, err = s.getIngressIP(ctx)
+		if err != nil {
+			return microerror.Mask(err)
+		} else if ingressIP == "" {
+			return nil
+		}
 	}
 
 	input := &route53.ChangeResourceRecordSetsInput{
@@ -198,7 +201,7 @@ func (s *Service) changeClusterIngressRecords(ctx context.Context, action string
 						TTL:  aws.Int64(TTL),
 						ResourceRecords: []*route53.ResourceRecord{
 							{
-								Value: aws.String(ip),
+								Value: aws.String(ingressIP),
 							},
 						},
 					},
@@ -314,9 +317,13 @@ func (s *Service) getIngressIP(ctx context.Context) (string, error) {
 		Namespace: IngressAppNamespace,
 	}
 
-	var icService corev1.Service
+	k8sClient, err := s.scope.ClusterK8sClient(ctx)
+	if err != nil {
+		return "", microerror.Mask(err)
+	}
 
-	err := s.scope.ClusterK8sClient().Get(ctx, o, &icService)
+	var icService corev1.Service
+	err = k8sClient.Get(ctx, o, &icService)
 	// Ingress service is not installed in this cluster.
 	if apierrors.IsNotFound(err) {
 		return "", nil

@@ -1,6 +1,8 @@
 package cloud
 
 import (
+	"context"
+
 	awsclient "github.com/aws/aws-sdk-go/aws/client"
 	"github.com/go-logr/logr"
 	capo "sigs.k8s.io/cluster-api-provider-openstack/api/v1alpha4"
@@ -30,7 +32,7 @@ type ClusterScoper interface {
 	// BaseDomain returns the base domain.
 	BaseDomain() string
 	// ClusterK8sClient returns a client to interact with the cluster.
-	ClusterK8sClient() client.Client
+	ClusterK8sClient(ctx context.Context) (client.Client, error)
 	// CoreCluster returns the core cluster object.
 	CoreCluster() *capi.Cluster
 	// InfrastructureCluster returns the infrastructure cluster object.
