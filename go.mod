@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/aws/aws-sdk-go v1.42.26
-	github.com/giantswarm/k8sclient/v6 v6.0.0
+	github.com/giantswarm/k8sclient/v6 v6.1.0
 	github.com/giantswarm/microerror v0.3.0
 	github.com/giantswarm/micrologger v0.5.0
 	github.com/go-logr/logr v0.4.0
