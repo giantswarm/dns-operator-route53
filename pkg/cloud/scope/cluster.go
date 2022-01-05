@@ -73,7 +73,7 @@ type ClusterScope struct {
 	session awsclient.ConfigProvider
 }
 
-// APIEndpoint returns the AWS infrastructure Kubernetes API endpoint.
+// APIEndpoint returns the Openstack infrastructure Kubernetes API endpoint.
 func (s *ClusterScope) APIEndpoint() string {
 	return s.infraCluster.Spec.ControlPlaneEndpoint.Host
 }
@@ -106,7 +106,7 @@ func (s *ClusterScope) ClusterK8sClient(ctx context.Context) (client.Client, err
 	return s.k8sClient, nil
 }
 
-// Name returns the AWS infrastructure cluster name.
+// Name returns the Openstack infrastructure cluster name.
 func (s *ClusterScope) Name() string {
 	return s.coreCluster.Name
 }
