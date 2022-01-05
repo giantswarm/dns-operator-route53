@@ -17,11 +17,14 @@ const (
 	IngressAppPrefix    = "nginx-ingress-controller-app-"
 	IngressAppNamespace = "kube-system"
 	TTL                 = 300
+
+	actionDelete = "DELETE"
+	actionUpsert = "UPSERT"
 )
 
 func (s *Service) DeleteRoute53(ctx context.Context) error {
 	s.scope.V(2).Info("Deleting hosted DNS zone")
-	hostedZoneID, err := s.describeClusterHostedZone()
+	hostedZoneID, err := s.describeClusterHostedZone(ctx)
 	if IsHostedZoneNotFound(err) {
 		return nil
 	} else if err != nil {
@@ -29,21 +32,21 @@ func (s *Service) DeleteRoute53(ctx context.Context) error {
 	}
 
 	// We need to delete all records first before we can delete the hosted zone
-	if err := s.changeClusterIngressRecords(ctx, "DELETE"); err != nil {
+	if err := s.changeClusterIngressRecords(ctx, actionDelete); err != nil {
 		return microerror.Mask(err)
 	}
 
-	if err := s.changeClusterAPIRecords("DELETE"); err != nil {
+	if err := s.changeClusterAPIRecords(ctx, actionDelete); err != nil {
 		return microerror.Mask(err)
 	}
 
 	// Then delete delegation record in base hosted zone
-	if err := s.changeClusterNSDelegation("DELETE"); err != nil {
+	if err := s.changeClusterNSDelegation(ctx, actionDelete); err != nil {
 		return microerror.Mask(err)
 	}
 
 	// Finally delete DNS zone for cluster
-	err = s.deleteClusterHostedZone(hostedZoneID)
+	err = s.deleteClusterHostedZone(ctx, hostedZoneID)
 	if err != nil {
 		return microerror.Mask(err)
 	}
@@ -55,9 +58,9 @@ func (s *Service) ReconcileRoute53(ctx context.Context) error {
 	s.scope.V(2).Info("Reconciling hosted DNS zone")
 
 	// Describe or create.
-	_, err := s.describeClusterHostedZone()
+	_, err := s.describeClusterHostedZone(ctx)
 	if IsHostedZoneNotFound(err) {
-		err = s.createClusterHostedZone()
+		err = s.createClusterHostedZone(ctx)
 		if err != nil {
 			return microerror.Mask(err)
 		}
@@ -66,21 +69,21 @@ func (s *Service) ReconcileRoute53(ctx context.Context) error {
 		return microerror.Mask(err)
 	}
 
-	err = s.changeClusterNSDelegation("CREATE")
+	err = s.changeClusterNSDelegation(ctx, actionUpsert)
 	if IsAlreadyExists(err) {
 		// Fall through
 	} else if err != nil {
 		return microerror.Mask(err)
 	}
 
-	err = s.changeClusterAPIRecords("CREATE")
+	err = s.changeClusterAPIRecords(ctx, actionUpsert)
 	if IsAlreadyExists(err) {
 		// Fall through
 	} else if err != nil {
 		return microerror.Mask(err)
 	}
 
-	err = s.changeClusterIngressRecords(ctx, "CREATE")
+	err = s.changeClusterIngressRecords(ctx, actionUpsert)
 	if IsAlreadyExists(err) {
 		// Fall through
 	} else if err != nil {
@@ -90,12 +93,12 @@ func (s *Service) ReconcileRoute53(ctx context.Context) error {
 	return nil
 }
 
-func (s *Service) describeClusterHostedZone() (string, error) {
+func (s *Service) describeClusterHostedZone(ctx context.Context) (string, error) {
 	// Search host zone by DNSName
 	input := &route53.ListHostedZonesByNameInput{
 		DNSName: aws.String(fmt.Sprintf("%s.%s", s.scope.Name(), s.scope.BaseDomain())),
 	}
-	out, err := s.Route53Client.ListHostedZonesByName(input)
+	out, err := s.Route53Client.ListHostedZonesByNameWithContext(ctx, input)
 	if err != nil {
 		return "", wrapRoute53Error(err)
 	}
@@ -111,8 +114,8 @@ func (s *Service) describeClusterHostedZone() (string, error) {
 	return *out.HostedZones[0].Id, nil
 }
 
-func (s *Service) listClusterNSRecords() ([]*route53.ResourceRecord, error) {
-	hostZoneID, err := s.describeClusterHostedZone()
+func (s *Service) listClusterNSRecords(ctx context.Context) ([]*route53.ResourceRecord, error) {
+	hostZoneID, err := s.describeClusterHostedZone(ctx)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
@@ -123,21 +126,21 @@ func (s *Service) listClusterNSRecords() ([]*route53.ResourceRecord, error) {
 		MaxItems:     aws.String("1"),
 	}
 
-	output, err := s.Route53Client.ListResourceRecordSets(input)
+	output, err := s.Route53Client.ListResourceRecordSetsWithContext(ctx, input)
 	if err != nil {
 		return nil, wrapRoute53Error(err)
 	}
 	return output.ResourceRecordSets[0].ResourceRecords, nil
 }
 
-func (s *Service) changeClusterAPIRecords(action string) error {
+func (s *Service) changeClusterAPIRecords(ctx context.Context, action string) error {
 	s.scope.Info(s.scope.APIEndpoint())
 	if s.scope.APIEndpoint() == "" {
 		s.scope.Info("API endpoint is not ready yet.")
 		return aws.ErrMissingEndpoint
 	}
 
-	hostZoneID, err := s.describeClusterHostedZone()
+	hostZoneID, err := s.describeClusterHostedZone(ctx)
 	if err != nil {
 		return microerror.Mask(err)
 	}
@@ -163,7 +166,7 @@ func (s *Service) changeClusterAPIRecords(action string) error {
 		},
 	}
 
-	_, err = s.Route53Client.ChangeResourceRecordSets(input)
+	_, err = s.Route53Client.ChangeResourceRecordSetsWithContext(ctx, input)
 	if err != nil {
 		return wrapRoute53Error(err)
 	}
@@ -171,16 +174,19 @@ func (s *Service) changeClusterAPIRecords(action string) error {
 }
 
 func (s *Service) changeClusterIngressRecords(ctx context.Context, action string) error {
-	hostZoneID, err := s.describeClusterHostedZone()
+	hostZoneID, err := s.describeClusterHostedZone(ctx)
 	if err != nil {
 		return microerror.Mask(err)
 	}
 
-	ip, err := s.getIngressIP(ctx)
-	if err != nil {
-		return microerror.Mask(err)
-	} else if ip == "" {
-		return nil
+	var ingressIP string
+	if action == actionUpsert { // Avoid looking up IP via k8s client when deleting
+		ingressIP, err = s.getIngressIP(ctx)
+		if err != nil {
+			return microerror.Mask(err)
+		} else if ingressIP == "" {
+			return nil
+		}
 	}
 
 	input := &route53.ChangeResourceRecordSetsInput{
@@ -195,7 +201,7 @@ func (s *Service) changeClusterIngressRecords(ctx context.Context, action string
 						TTL:  aws.Int64(TTL),
 						ResourceRecords: []*route53.ResourceRecord{
 							{
-								Value: aws.String(ip),
+								Value: aws.String(ingressIP),
 							},
 						},
 					},
@@ -217,18 +223,18 @@ func (s *Service) changeClusterIngressRecords(ctx context.Context, action string
 		},
 	}
 
-	_, err = s.Route53Client.ChangeResourceRecordSets(input)
+	_, err = s.Route53Client.ChangeResourceRecordSetsWithContext(ctx, input)
 	if err != nil {
 		return wrapRoute53Error(err)
 	}
 	return nil
 }
 
-func (s *Service) describeBaseHostedZone() (string, error) {
+func (s *Service) describeBaseHostedZone(ctx context.Context) (string, error) {
 	input := &route53.ListHostedZonesByNameInput{
 		DNSName: aws.String(s.scope.BaseDomain()),
 	}
-	out, err := s.Route53Client.ListHostedZonesByName(input)
+	out, err := s.Route53Client.ListHostedZonesByNameWithContext(ctx, input)
 	if err != nil {
 		s.scope.Info(err.Error())
 		return "", wrapRoute53Error(err)
@@ -244,13 +250,13 @@ func (s *Service) describeBaseHostedZone() (string, error) {
 	return *out.HostedZones[0].Id, nil
 }
 
-func (s *Service) changeClusterNSDelegation(action string) error {
-	hostZoneID, err := s.describeBaseHostedZone()
+func (s *Service) changeClusterNSDelegation(ctx context.Context, action string) error {
+	hostZoneID, err := s.describeBaseHostedZone(ctx)
 	if err != nil {
 		return microerror.Mask(err)
 	}
 
-	records, err := s.listClusterNSRecords()
+	records, err := s.listClusterNSRecords(ctx)
 	if err != nil {
 		return microerror.Mask(err)
 	}
@@ -272,31 +278,31 @@ func (s *Service) changeClusterNSDelegation(action string) error {
 		},
 	}
 
-	_, err = s.Route53Client.ChangeResourceRecordSets(input)
+	_, err = s.Route53Client.ChangeResourceRecordSetsWithContext(ctx, input)
 	if err != nil {
 		return wrapRoute53Error(err)
 	}
 	return nil
 }
 
-func (s *Service) createClusterHostedZone() error {
+func (s *Service) createClusterHostedZone(ctx context.Context) error {
 	now := time.Now()
 	input := &route53.CreateHostedZoneInput{
 		CallerReference: aws.String(now.UTC().String()),
 		Name:            aws.String(fmt.Sprintf("%s.%s.", s.scope.Name(), s.scope.BaseDomain())),
 	}
-	_, err := s.Route53Client.CreateHostedZone(input)
+	_, err := s.Route53Client.CreateHostedZoneWithContext(ctx, input)
 	if err != nil {
 		return wrapRoute53Error(err)
 	}
 	return nil
 }
 
-func (s *Service) deleteClusterHostedZone(hostedZoneID string) error {
+func (s *Service) deleteClusterHostedZone(ctx context.Context, hostedZoneID string) error {
 	input := &route53.DeleteHostedZoneInput{
 		Id: aws.String(hostedZoneID),
 	}
-	_, err := s.Route53Client.DeleteHostedZone(input)
+	_, err := s.Route53Client.DeleteHostedZoneWithContext(ctx, input)
 	if err != nil {
 		return wrapRoute53Error(err)
 	}
@@ -311,9 +317,13 @@ func (s *Service) getIngressIP(ctx context.Context) (string, error) {
 		Namespace: IngressAppNamespace,
 	}
 
-	var icService corev1.Service
+	k8sClient, err := s.scope.ClusterK8sClient(ctx)
+	if err != nil {
+		return "", microerror.Mask(err)
+	}
 
-	err := s.scope.ClusterK8sClient().Get(ctx, o, &icService)
+	var icService corev1.Service
+	err = k8sClient.Get(ctx, o, &icService)
 	// Ingress service is not installed in this cluster.
 	if apierrors.IsNotFound(err) {
 		return "", nil
@@ -326,5 +336,4 @@ func (s *Service) getIngressIP(ctx context.Context) (string, error) {
 	}
 
 	return icService.Status.LoadBalancer.Ingress[0].IP, nil
-
 }

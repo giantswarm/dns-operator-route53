@@ -54,16 +54,10 @@ func NewClusterScope(ctx context.Context, params ClusterScopeParams) (*ClusterSc
 		return nil, microerror.Mask(err)
 	}
 
-	clusterK8sClient, err := getClusterK8sClient(ctx, params.CoreCluster)
-	if err != nil {
-		return nil, microerror.Mask(err)
-	}
-
 	return &ClusterScope{
 		coreCluster:  params.CoreCluster,
 		infraCluster: params.InfrastructureCluster,
 		baseDomain:   params.BaseDomain,
-		k8sClient:    clusterK8sClient,
 		Logger:       params.Logger,
 		session:      awsSession,
 	}, nil
@@ -79,7 +73,7 @@ type ClusterScope struct {
 	session awsclient.ConfigProvider
 }
 
-// APIEndpoint returns the AWS infrastructure Kubernetes API endpoint.
+// APIEndpoint returns the Openstack infrastructure Kubernetes API endpoint.
 func (s *ClusterScope) APIEndpoint() string {
 	return s.infraCluster.Spec.ControlPlaneEndpoint.Host
 }
@@ -100,13 +94,21 @@ func (s *ClusterScope) InfrastructureCluster() *capo.OpenStackCluster {
 }
 
 // ClusterK8sClient returns a client to interact with the cluster.
-func (s *ClusterScope) ClusterK8sClient() client.Client {
-	return s.k8sClient
+func (s *ClusterScope) ClusterK8sClient(ctx context.Context) (client.Client, error) {
+	if s.k8sClient == nil {
+		var err error
+		s.k8sClient, err = getClusterK8sClient(ctx, s.coreCluster)
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+	}
+
+	return s.k8sClient, nil
 }
 
-// Name returns the AWS infrastructure cluster name.
+// Name returns the Openstack infrastructure cluster name.
 func (s *ClusterScope) Name() string {
-	return s.infraCluster.Name
+	return s.coreCluster.Name
 }
 
 // Session returns the AWS SDK session. Used for creating cluster client.
