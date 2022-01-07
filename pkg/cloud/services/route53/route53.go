@@ -32,16 +32,25 @@ func (s *Service) DeleteRoute53(ctx context.Context) error {
 	}
 
 	// We need to delete all records first before we can delete the hosted zone
-	if err := s.changeClusterIngressRecords(ctx, actionDelete); err != nil {
+	err = s.changeClusterIngressRecords(ctx, actionDelete)
+	if IsNotFound(err) {
+		// Entry does not exist, fall through
+	} else if err != nil {
 		return microerror.Mask(err)
 	}
 
-	if err := s.changeClusterAPIRecords(ctx, actionDelete); err != nil {
+	err = s.changeClusterAPIRecords(ctx, actionDelete)
+	if IsNotFound(err) {
+		// Entry does not exist, fall through
+	} else if err != nil {
 		return microerror.Mask(err)
 	}
 
 	// Then delete delegation record in base hosted zone
-	if err := s.changeClusterNSDelegation(ctx, actionDelete); err != nil {
+	err = s.changeClusterNSDelegation(ctx, actionDelete)
+	if IsNotFound(err) {
+		// Entry does not exist, fall through
+	} else if err != nil {
 		return microerror.Mask(err)
 	}
 
@@ -69,24 +78,15 @@ func (s *Service) ReconcileRoute53(ctx context.Context) error {
 		return microerror.Mask(err)
 	}
 
-	err = s.changeClusterNSDelegation(ctx, actionUpsert)
-	if IsAlreadyExists(err) {
-		// Fall through
-	} else if err != nil {
+	if err := s.changeClusterNSDelegation(ctx, actionUpsert); err != nil {
 		return microerror.Mask(err)
 	}
 
-	err = s.changeClusterAPIRecords(ctx, actionUpsert)
-	if IsAlreadyExists(err) {
-		// Fall through
-	} else if err != nil {
+	if err := s.changeClusterAPIRecords(ctx, actionUpsert); err != nil {
 		return microerror.Mask(err)
 	}
 
-	err = s.changeClusterIngressRecords(ctx, actionUpsert)
-	if IsAlreadyExists(err) {
-		// Fall through
-	} else if err != nil {
+	if err := s.changeClusterIngressRecords(ctx, actionUpsert); err != nil {
 		return microerror.Mask(err)
 	}
 
