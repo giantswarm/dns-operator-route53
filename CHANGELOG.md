@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## Fixed
+
+- Do not fail on already deleted entries.
+- Remove `alreadyExistsError` on creation/update as it's obsolete with UPSERT.
+
 ## [0.1.1] - 2022-01-05
 
 ### Added

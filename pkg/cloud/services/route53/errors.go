@@ -1,6 +1,8 @@
 package route53
 
 import (
+	"strings"
+
 	"github.com/aws/aws-sdk-go/service/route53"
 	"github.com/giantswarm/microerror"
 	"github.com/pkg/errors"
@@ -8,13 +10,13 @@ import (
 	"github.com/giantswarm/dns-operator-openstack/pkg/cloud/awserrors"
 )
 
-var alreadyExistsError = &microerror.Error{
-	Kind: "alreadyExistsError",
+// IsNotFound asserts notFoundError.
+func IsNotFound(err error) bool {
+	return microerror.Cause(err) == notFoundError
 }
 
-// IsAlreadyExists asserts alreadyExistsError.
-func IsAlreadyExists(err error) bool {
-	return microerror.Cause(err) == alreadyExistsError
+var notFoundError = &microerror.Error{
+	Kind: "notFoundError",
 }
 
 var hostedZoneNotFoundError = &microerror.Error{
@@ -45,7 +47,9 @@ func wrapRoute53Error(err error) error {
 		case route53.ErrCodeHostedZoneNotFound:
 			return microerror.Mask(hostedZoneNotFoundError)
 		case route53.ErrCodeInvalidChangeBatch:
-			return microerror.Mask(alreadyExistsError)
+			if strings.Contains(err.Error(), "not found") {
+				return microerror.Mask(notFoundError)
+			}
 		}
 	}
 
