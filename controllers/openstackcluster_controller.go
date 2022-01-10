@@ -90,13 +90,20 @@ func (r *OpenstackClusterReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return reconcile.Result{}, microerror.Mask(err)
 	}
 
-	// Handle deleted clusters
+	var result ctrl.Result
 	if !infraCluster.DeletionTimestamp.IsZero() {
-		return r.reconcileDelete(ctx, clusterScope)
+		// Handle deleted clusters
+		result, err = r.reconcileDelete(ctx, clusterScope)
+	} else {
+		// Handle non-deleted clusters
+		result, err = r.reconcileNormal(ctx, clusterScope)
 	}
 
-	// Handle non-deleted clusters
-	return r.reconcileNormal(ctx, clusterScope)
+	if err != nil {
+		log.Error(err, microerror.Pretty(err, true))
+	}
+
+	return result, err
 }
 
 func (r *OpenstackClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
