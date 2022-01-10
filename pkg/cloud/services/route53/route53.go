@@ -289,7 +289,10 @@ func (s *Service) createClusterHostedZone(ctx context.Context) error {
 	now := time.Now()
 	input := &route53.CreateHostedZoneInput{
 		CallerReference: aws.String(now.UTC().String()),
-		Name:            aws.String(fmt.Sprintf("%s.%s.", s.scope.Name(), s.scope.BaseDomain())),
+		HostedZoneConfig: &route53.HostedZoneConfig{
+			Comment: aws.String(s.scope.ManagementCluster()),
+		},
+		Name: aws.String(fmt.Sprintf("%s.%s.", s.scope.Name(), s.scope.BaseDomain())),
 	}
 	_, err := s.Route53Client.CreateHostedZoneWithContext(ctx, input)
 	if err != nil {
