@@ -85,6 +85,7 @@ func (r *OpenstackClusterReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		BaseDomain:            r.BaseDomain,
 		CoreCluster:           coreCluster,
 		InfrastructureCluster: &infraCluster,
+		ManagementCluster:     r.ManagementCluster,
 	})
 	if err != nil {
 		return reconcile.Result{}, microerror.Mask(err)
