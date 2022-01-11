@@ -120,7 +120,7 @@ func (s *ClusterScope) ClusterK8sClient(ctx context.Context) (client.Client, err
 	return s.k8sClient, nil
 }
 
-// Name returns the AWS infrastructure cluster name.
+// Name returns the Openstack infrastructure cluster name.
 func (s *ClusterScope) Name() string {
 	return s.coreCluster.Name
 }
