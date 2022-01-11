@@ -60,7 +60,7 @@ func main() {
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 
 	flag.StringVar(&baseDomain, "base-domain", "", "Domain for which to create the DNS entries, e.g. customer.gigantic.io.")
-	flag.StringVar(&managementCluster, "management-cluster", "galaxy", "Name of the management cluster.")
+	flag.StringVar(&managementCluster, "management-cluster", "", "Name of the management cluster.")
 
 	flag.Parse()
 

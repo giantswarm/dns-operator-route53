@@ -51,9 +51,6 @@ func NewClusterScope(ctx context.Context, params ClusterScopeParams) (*ClusterSc
 	if params.InfrastructureCluster == nil {
 		return nil, microerror.Maskf(invalidConfigError, "failed to generate new scope from nil InfrastructureCluster")
 	}
-	if params.ManagementCluster == "" {
-		return nil, microerror.Maskf(invalidConfigError, "failed to generate new scope from empty ManagementCluster")
-	}
 
 	awsSession, err := session.NewSession()
 	if err != nil {
