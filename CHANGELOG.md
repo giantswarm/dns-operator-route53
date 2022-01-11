@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## Added
+
+- Add MC metadata to hosted zones.
+
 ## Fixed
 
 - Do not fail on already deleted entries.
