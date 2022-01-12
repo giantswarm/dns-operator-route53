@@ -294,7 +294,7 @@ func (s *Service) createClusterHostedZone(ctx context.Context) error {
 
 	if s.scope.ManagementCluster() != "" {
 		input.HostedZoneConfig = &route53.HostedZoneConfig{
-			Comment: aws.String(fmt.Sprintf("MC: %s", s.scope.ManagementCluster())),
+			Comment: aws.String(fmt.Sprintf("management_cluster: %s", s.scope.ManagementCluster())),
 		}
 	}
 	_, err := s.Route53Client.CreateHostedZoneWithContext(ctx, input)
