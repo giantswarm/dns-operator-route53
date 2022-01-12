@@ -27,7 +27,6 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	capo "sigs.k8s.io/cluster-api-provider-openstack/api/v1alpha4"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
@@ -40,10 +39,10 @@ import (
 // OpenstackClusterReconciler reconciles a openstackCluster object
 type OpenstackClusterReconciler struct {
 	client.Client
+	Log logr.Logger
 
-	Log        logr.Logger
-	BaseDomain string
-	Scheme     *runtime.Scheme
+	BaseDomain        string
+	ManagementCluster string
 }
 
 // +kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=openstackclusters,verbs=get;list;watch;create;update;patch;delete
@@ -81,10 +80,12 @@ func (r *OpenstackClusterReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 	// Create the cluster scope.
 	clusterScope, err := scope.NewClusterScope(ctx, scope.ClusterScopeParams{
+		Logger: log,
+
 		BaseDomain:            r.BaseDomain,
-		Logger:                log,
 		CoreCluster:           coreCluster,
 		InfrastructureCluster: &infraCluster,
+		ManagementCluster:     r.ManagementCluster,
 	})
 	if err != nil {
 		return reconcile.Result{}, microerror.Mask(err)

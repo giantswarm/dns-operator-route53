@@ -27,26 +27,29 @@ const (
 
 // ClusterScopeParams defines the input parameters used to create a new Scope.
 type ClusterScopeParams struct {
+	Logger logr.Logger
+
+	BaseDomain            string
 	CoreCluster           *capi.Cluster
 	InfrastructureCluster *capo.OpenStackCluster
-	BaseDomain            string
-	Logger                logr.Logger
+	ManagementCluster     string
 }
 
 // NewClusterScope creates a new Scope from the supplied parameters.
 // This is meant to be called for each reconcile iteration.
 func NewClusterScope(ctx context.Context, params ClusterScopeParams) (*ClusterScope, error) {
+	if params.Logger == nil {
+		params.Logger = klogr.New()
+	}
+
+	if params.BaseDomain == "" {
+		return nil, microerror.Maskf(invalidConfigError, "failed to generate new scope from empty BaseDomain")
+	}
 	if params.CoreCluster == nil {
 		return nil, microerror.Maskf(invalidConfigError, "failed to generate new scope from nil CoreCluster")
 	}
 	if params.InfrastructureCluster == nil {
 		return nil, microerror.Maskf(invalidConfigError, "failed to generate new scope from nil InfrastructureCluster")
-	}
-	if params.BaseDomain == "" {
-		return nil, microerror.Maskf(invalidConfigError, "failed to generate new scope from empty BaseDomain")
-	}
-	if params.Logger == nil {
-		params.Logger = klogr.New()
 	}
 
 	awsSession, err := session.NewSession()
@@ -55,22 +58,28 @@ func NewClusterScope(ctx context.Context, params ClusterScopeParams) (*ClusterSc
 	}
 
 	return &ClusterScope{
-		coreCluster:  params.CoreCluster,
-		infraCluster: params.InfrastructureCluster,
-		baseDomain:   params.BaseDomain,
-		Logger:       params.Logger,
-		session:      awsSession,
+		Logger: params.Logger,
+
+		session: awsSession,
+
+		baseDomain:        params.BaseDomain,
+		coreCluster:       params.CoreCluster,
+		infraCluster:      params.InfrastructureCluster,
+		managementCluster: params.ManagementCluster,
 	}, nil
 }
 
 // ClusterScope defines the basic context for an actuator to operate upon.
 type ClusterScope struct {
-	coreCluster  *capi.Cluster
-	infraCluster *capo.OpenStackCluster
-	baseDomain   string
-	k8sClient    client.Client
 	logr.Logger
-	session awsclient.ConfigProvider
+
+	k8sClient client.Client
+	session   awsclient.ConfigProvider
+
+	baseDomain        string
+	coreCluster       *capi.Cluster
+	infraCluster      *capo.OpenStackCluster
+	managementCluster string
 }
 
 // APIEndpoint returns the Openstack infrastructure Kubernetes API endpoint.
@@ -91,6 +100,11 @@ func (s *ClusterScope) CoreCluster() *capi.Cluster {
 // InfrastructureCluster returns the infrastructure cluster.
 func (s *ClusterScope) InfrastructureCluster() *capo.OpenStackCluster {
 	return s.infraCluster
+}
+
+// ManagementCluster returns the name of the management cluster.
+func (s *ClusterScope) ManagementCluster() string {
+	return s.managementCluster
 }
 
 // ClusterK8sClient returns a client to interact with the cluster.

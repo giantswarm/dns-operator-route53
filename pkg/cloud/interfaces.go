@@ -37,6 +37,8 @@ type ClusterScoper interface {
 	CoreCluster() *capi.Cluster
 	// InfrastructureCluster returns the infrastructure cluster object.
 	InfrastructureCluster() *capo.OpenStackCluster
+	// ManagementCluster returns the name of the management cluster.
+	ManagementCluster() string
 	// Name returns the CAPI cluster name.
 	Name() string
 }
