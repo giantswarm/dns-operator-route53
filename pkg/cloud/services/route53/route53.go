@@ -86,7 +86,7 @@ func (s *Service) ReconcileRoute53(ctx context.Context) error {
 func (s *Service) describeClusterHostedZone(ctx context.Context) (string, error) {
 	// Search host zone by DNSName
 	input := &route53.ListHostedZonesByNameInput{
-		DNSName: aws.String(fmt.Sprintf("%s.%s", s.scope.Name(), s.scope.BaseDomain())),
+		DNSName: aws.String(s.scope.ClusterDomain()),
 	}
 	out, err := s.Route53Client.ListHostedZonesByNameWithContext(ctx, input)
 	if err != nil {
@@ -97,7 +97,7 @@ func (s *Service) describeClusterHostedZone(ctx context.Context) (string, error)
 		return "", microerror.Mask(hostedZoneNotFoundError)
 	}
 
-	if *out.HostedZones[0].Name != fmt.Sprintf("%s.%s.", s.scope.Name(), s.scope.BaseDomain()) {
+	if *out.HostedZones[0].Name != s.scope.ClusterDomain() {
 		return "", microerror.Mask(hostedZoneNotFoundError)
 	}
 
@@ -123,12 +123,11 @@ func (s *Service) deleteClusterRecords(ctx context.Context, hostedZoneID string)
 
 	for _, recordSet := range output.ResourceRecordSets {
 		// TODO extract this please
-		if strings.TrimSuffix(*recordSet.Name, ".") == fmt.Sprintf("%s.%s", s.scope.Name(), s.scope.BaseDomain()) {
+		if strings.TrimSuffix(*recordSet.Name, ".") == s.scope.ClusterDomain() {
 			// We cannot delete those entries, they get automatically cleaned up when deleting the hosted zone
 			continue
 		}
 
-		fmt.Printf("Appending to delete %s.\n", *recordSet.Name)
 		recordsToDelete.ChangeBatch.Changes = append(recordsToDelete.ChangeBatch.Changes, &route53.Change{
 			Action:            aws.String(actionDelete),
 			ResourceRecordSet: recordSet,
@@ -170,7 +169,7 @@ func (s *Service) changeClusterAPIRecords(ctx context.Context, hostedZoneID stri
 				{
 					Action: aws.String(action),
 					ResourceRecordSet: &route53.ResourceRecordSet{
-						Name: aws.String(fmt.Sprintf("api.%s.%s", s.scope.Name(), s.scope.BaseDomain())),
+						Name: aws.String(fmt.Sprintf("api.%s", s.scope.ClusterDomain())),
 						Type: aws.String("A"),
 						TTL:  aws.Int64(300),
 						ResourceRecords: []*route53.ResourceRecord{
@@ -209,7 +208,7 @@ func (s *Service) changeClusterIngressRecords(ctx context.Context, hostedZoneID,
 				{
 					Action: aws.String(action),
 					ResourceRecordSet: &route53.ResourceRecordSet{
-						Name: aws.String(fmt.Sprintf("ingress.%s.%s", s.scope.Name(), s.scope.BaseDomain())),
+						Name: aws.String(fmt.Sprintf("ingress.%s", s.scope.ClusterDomain())),
 						Type: aws.String("A"),
 						TTL:  aws.Int64(TTL),
 						ResourceRecords: []*route53.ResourceRecord{
@@ -222,12 +221,12 @@ func (s *Service) changeClusterIngressRecords(ctx context.Context, hostedZoneID,
 				{
 					Action: aws.String(action),
 					ResourceRecordSet: &route53.ResourceRecordSet{
-						Name: aws.String(fmt.Sprintf("*.%s.%s", s.scope.Name(), s.scope.BaseDomain())),
+						Name: aws.String(fmt.Sprintf("*.%s", s.scope.ClusterDomain())),
 						Type: aws.String("CNAME"),
 						TTL:  aws.Int64(300),
 						ResourceRecords: []*route53.ResourceRecord{
 							{
-								Value: aws.String(fmt.Sprintf("ingress.%s.%s", s.scope.Name(), s.scope.BaseDomain())),
+								Value: aws.String(fmt.Sprintf("ingress.%s", s.scope.ClusterDomain())),
 							},
 						},
 					},
@@ -255,7 +254,7 @@ func (s *Service) describeBaseHostedZone(ctx context.Context) (string, error) {
 		return "", microerror.Mask(hostedZoneNotFoundError)
 	}
 
-	if *out.HostedZones[0].Name != fmt.Sprintf("%s.", s.scope.BaseDomain()) {
+	if *out.HostedZones[0].Name != s.scope.BaseDomain() {
 		return "", microerror.Mask(hostedZoneNotFoundError)
 	}
 
@@ -280,7 +279,7 @@ func (s *Service) changeClusterNSDelegation(ctx context.Context, action string) 
 				{
 					Action: aws.String(action),
 					ResourceRecordSet: &route53.ResourceRecordSet{
-						Name:            aws.String(fmt.Sprintf("%s.%s", s.scope.Name(), s.scope.BaseDomain())),
+						Name:            aws.String(s.scope.ClusterDomain()),
 						Type:            aws.String("NS"),
 						TTL:             aws.Int64(TTL),
 						ResourceRecords: records,
@@ -301,7 +300,7 @@ func (s *Service) createClusterHostedZone(ctx context.Context) error {
 	now := time.Now()
 	input := &route53.CreateHostedZoneInput{
 		CallerReference: aws.String(now.UTC().String()),
-		Name:            aws.String(fmt.Sprintf("%s.%s.", s.scope.Name(), s.scope.BaseDomain())),
+		Name:            aws.String(s.scope.ClusterDomain()),
 	}
 
 	if s.scope.ManagementCluster() != "" {

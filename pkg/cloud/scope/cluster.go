@@ -120,6 +120,11 @@ func (s *ClusterScope) ClusterK8sClient(ctx context.Context) (client.Client, err
 	return s.k8sClient, nil
 }
 
+// ClusterDomain returns the cluster domain.
+func (s *ClusterScope) ClusterDomain() string {
+	return fmt.Sprintf("%s.%s", s.coreCluster.Name, s.baseDomain)
+}
+
 // Name returns the Openstack infrastructure cluster name.
 func (s *ClusterScope) Name() string {
 	return s.coreCluster.Name
