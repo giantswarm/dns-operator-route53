@@ -97,7 +97,7 @@ func (s *Service) describeClusterHostedZone(ctx context.Context) (string, error)
 		return "", microerror.Mask(hostedZoneNotFoundError)
 	}
 
-	if *out.HostedZones[0].Name != s.scope.ClusterDomain() {
+	if *out.HostedZones[0].Name != fmt.Sprintf("%s.", s.scope.ClusterDomain()) {
 		return "", microerror.Mask(hostedZoneNotFoundError)
 	}
 
@@ -265,7 +265,7 @@ func (s *Service) describeBaseHostedZone(ctx context.Context) (string, error) {
 		return "", microerror.Mask(hostedZoneNotFoundError)
 	}
 
-	if *out.HostedZones[0].Name != s.scope.BaseDomain() {
+	if *out.HostedZones[0].Name != fmt.Sprintf("%s.", s.scope.BaseDomain()) {
 		return "", microerror.Mask(hostedZoneNotFoundError)
 	}
 
@@ -311,7 +311,7 @@ func (s *Service) createClusterHostedZone(ctx context.Context) error {
 	now := time.Now()
 	input := &route53.CreateHostedZoneInput{
 		CallerReference: aws.String(now.UTC().String()),
-		Name:            aws.String(s.scope.ClusterDomain()),
+		Name:            aws.String(fmt.Sprintf("%s.", s.scope.ClusterDomain())),
 	}
 
 	if s.scope.ManagementCluster() != "" {
