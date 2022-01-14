@@ -190,15 +190,11 @@ func (s *Service) changeClusterAPIRecords(ctx context.Context, hostedZoneID stri
 }
 
 func (s *Service) changeClusterIngressRecords(ctx context.Context, hostedZoneID, action string) error {
-	var ingressIP string
-	if action == actionUpsert { // Avoid looking up IP via k8s client when deleting
-		var err error
-		ingressIP, err = s.getIngressIP(ctx)
-		if err != nil {
-			return microerror.Mask(err)
-		} else if ingressIP == "" {
-			return nil
-		}
+	ingressIP, err := s.getIngressIP(ctx)
+	if err != nil {
+		return microerror.Mask(err)
+	} else if ingressIP == "" {
+		return nil
 	}
 
 	input := &route53.ChangeResourceRecordSetsInput{
