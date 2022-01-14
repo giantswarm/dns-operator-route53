@@ -57,7 +57,7 @@ func (s *Service) ReconcileRoute53(ctx context.Context) error {
 	s.scope.V(2).Info("Reconciling hosted DNS zone")
 
 	// Describe or create.
-	hostedZoneID, err := s.describeClusterHostedZone(ctx)
+	_, err := s.describeClusterHostedZone(ctx)
 	if IsHostedZoneNotFound(err) {
 		err = s.createClusterHostedZone(ctx)
 		if err != nil {
@@ -72,11 +72,11 @@ func (s *Service) ReconcileRoute53(ctx context.Context) error {
 		return microerror.Mask(err)
 	}
 
-	if err := s.changeClusterAPIRecords(ctx, hostedZoneID, actionUpsert); err != nil {
+	if err := s.changeClusterAPIRecords(ctx, actionUpsert); err != nil {
 		return microerror.Mask(err)
 	}
 
-	if err := s.changeClusterIngressRecords(ctx, hostedZoneID, actionUpsert); err != nil {
+	if err := s.changeClusterIngressRecords(ctx, actionUpsert); err != nil {
 		return microerror.Mask(err)
 	}
 
@@ -141,10 +141,15 @@ func (s *Service) deleteClusterRecords(ctx context.Context, hostedZoneID string)
 	return nil
 }
 
-func (s *Service) listClusterNSRecords(ctx context.Context, hostedZoneID string) ([]*route53.ResourceRecord, error) {
+func (s *Service) listClusterNSRecords(ctx context.Context) ([]*route53.ResourceRecord, error) {
+	hostZoneID, err := s.describeClusterHostedZone(ctx)
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+
 	// First entry is always NS record
 	input := &route53.ListResourceRecordSetsInput{
-		HostedZoneId: aws.String(hostedZoneID),
+		HostedZoneId: aws.String(hostZoneID),
 		MaxItems:     aws.String("1"),
 	}
 
@@ -155,15 +160,20 @@ func (s *Service) listClusterNSRecords(ctx context.Context, hostedZoneID string)
 	return output.ResourceRecordSets[0].ResourceRecords, nil
 }
 
-func (s *Service) changeClusterAPIRecords(ctx context.Context, hostedZoneID string, action string) error {
+func (s *Service) changeClusterAPIRecords(ctx context.Context, action string) error {
 	s.scope.Info(s.scope.APIEndpoint())
 	if s.scope.APIEndpoint() == "" {
 		s.scope.Info("API endpoint is not ready yet.")
 		return aws.ErrMissingEndpoint
 	}
 
+	hostZoneID, err := s.describeClusterHostedZone(ctx)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
 	input := &route53.ChangeResourceRecordSetsInput{
-		HostedZoneId: aws.String(hostedZoneID),
+		HostedZoneId: aws.String(hostZoneID),
 		ChangeBatch: &route53.ChangeBatch{
 			Changes: []*route53.Change{
 				{
@@ -189,7 +199,7 @@ func (s *Service) changeClusterAPIRecords(ctx context.Context, hostedZoneID stri
 	return nil
 }
 
-func (s *Service) changeClusterIngressRecords(ctx context.Context, hostedZoneID, action string) error {
+func (s *Service) changeClusterIngressRecords(ctx context.Context, action string) error {
 	ingressIP, err := s.getIngressIP(ctx)
 	if err != nil {
 		return microerror.Mask(err)
@@ -197,8 +207,13 @@ func (s *Service) changeClusterIngressRecords(ctx context.Context, hostedZoneID,
 		return nil
 	}
 
+	hostZoneID, err := s.describeClusterHostedZone(ctx)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
 	input := &route53.ChangeResourceRecordSetsInput{
-		HostedZoneId: aws.String(hostedZoneID),
+		HostedZoneId: aws.String(hostZoneID),
 		ChangeBatch: &route53.ChangeBatch{
 			Changes: []*route53.Change{
 				{
@@ -258,18 +273,18 @@ func (s *Service) describeBaseHostedZone(ctx context.Context) (string, error) {
 }
 
 func (s *Service) changeClusterNSDelegation(ctx context.Context, action string) error {
-	hostedZoneID, err := s.describeBaseHostedZone(ctx)
+	hostZoneID, err := s.describeBaseHostedZone(ctx)
 	if err != nil {
 		return microerror.Mask(err)
 	}
 
-	records, err := s.listClusterNSRecords(ctx, hostedZoneID)
+	records, err := s.listClusterNSRecords(ctx)
 	if err != nil {
 		return microerror.Mask(err)
 	}
 
 	input := &route53.ChangeResourceRecordSetsInput{
-		HostedZoneId: aws.String(hostedZoneID),
+		HostedZoneId: aws.String(hostZoneID),
 		ChangeBatch: &route53.ChangeBatch{
 			Changes: []*route53.Change{
 				{
@@ -308,6 +323,7 @@ func (s *Service) createClusterHostedZone(ctx context.Context) error {
 	if err != nil {
 		return wrapRoute53Error(err)
 	}
+
 	return nil
 }
 
