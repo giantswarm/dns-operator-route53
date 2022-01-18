@@ -122,7 +122,6 @@ func (s *Service) deleteClusterRecords(ctx context.Context, hostedZoneID string)
 	}
 
 	for _, recordSet := range output.ResourceRecordSets {
-		// TODO extract this please
 		if strings.TrimSuffix(*recordSet.Name, ".") == s.scope.ClusterDomain() {
 			// We cannot delete those entries, they get automatically cleaned up when deleting the hosted zone
 			continue
@@ -134,10 +133,16 @@ func (s *Service) deleteClusterRecords(ctx context.Context, hostedZoneID string)
 		})
 	}
 
+	if len(recordsToDelete.ChangeBatch.Changes) == 0 {
+		// Nothing to delete
+		return nil
+	}
+
 	_, err = s.Route53Client.ChangeResourceRecordSetsWithContext(ctx, recordsToDelete)
 	if err != nil {
 		return wrapRoute53Error(err)
 	}
+
 	return nil
 }
 
