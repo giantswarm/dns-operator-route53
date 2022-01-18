@@ -83,7 +83,6 @@ func (r *OpenstackClusterReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		Logger: log,
 
 		BaseDomain:            r.BaseDomain,
-		CoreCluster:           coreCluster,
 		InfrastructureCluster: &infraCluster,
 		ManagementCluster:     r.ManagementCluster,
 	})
