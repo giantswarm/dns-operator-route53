@@ -72,8 +72,22 @@ func (s *Service) ReconcileRoute53(ctx context.Context) error {
 		return microerror.Mask(err)
 	}
 
-	if err := s.changeClusterAPIRecords(ctx, hostedZoneID, actionUpsert); err != nil {
+	if s.scope.APIEndpoint() == "" {
+		s.scope.Info("API endpoint is not ready yet.")
+		return aws.ErrMissingEndpoint
+	}
+
+	s.scope.Info(s.scope.APIEndpoint())
+	if err := s.changeClusterRecords(ctx, hostedZoneID, "api", s.scope.APIEndpoint(), actionUpsert); err != nil {
 		return microerror.Mask(err)
+	}
+
+	if s.scope.BastionIP() != "" {
+		s.scope.Info(s.scope.BastionIP())
+
+		if err := s.changeClusterRecords(ctx, hostedZoneID, "bastion1", s.scope.BastionIP(), actionUpsert); err != nil {
+			return microerror.Mask(err)
+		}
 	}
 
 	if err := s.changeClusterIngressRecords(ctx, hostedZoneID, actionUpsert); err != nil {
@@ -160,13 +174,7 @@ func (s *Service) listClusterNSRecords(ctx context.Context, hostedZoneID string)
 	return output.ResourceRecordSets[0].ResourceRecords, nil
 }
 
-func (s *Service) changeClusterAPIRecords(ctx context.Context, hostedZoneID, action string) error {
-	s.scope.Info(s.scope.APIEndpoint())
-	if s.scope.APIEndpoint() == "" {
-		s.scope.Info("API endpoint is not ready yet.")
-		return aws.ErrMissingEndpoint
-	}
-
+func (s *Service) changeClusterRecords(ctx context.Context, hostedZoneID, recordName, recordValue, action string) error {
 	input := &route53.ChangeResourceRecordSetsInput{
 		HostedZoneId: aws.String(hostedZoneID),
 		ChangeBatch: &route53.ChangeBatch{
@@ -174,12 +182,12 @@ func (s *Service) changeClusterAPIRecords(ctx context.Context, hostedZoneID, act
 				{
 					Action: aws.String(action),
 					ResourceRecordSet: &route53.ResourceRecordSet{
-						Name: aws.String(fmt.Sprintf("api.%s", s.scope.ClusterDomain())),
+						Name: aws.String(fmt.Sprintf("%s.%s.%s", recordName, s.scope.Name(), s.scope.BaseDomain())),
 						Type: aws.String("A"),
 						TTL:  aws.Int64(300),
 						ResourceRecords: []*route53.ResourceRecord{
 							{
-								Value: aws.String(s.scope.APIEndpoint()),
+								Value: aws.String(recordValue),
 							},
 						},
 					},

@@ -86,6 +86,15 @@ func (s *ClusterScope) BaseDomain() string {
 	return s.baseDomain
 }
 
+// BastionIP returns the bastion IP.
+func (s *ClusterScope) BastionIP() string {
+	if s.infraCluster.Status.Bastion != nil {
+		return s.infraCluster.Status.Bastion.FloatingIP
+	}
+
+	return ""
+}
+
 // InfrastructureCluster returns the infrastructure cluster.
 func (s *ClusterScope) InfrastructureCluster() *capo.OpenStackCluster {
 	return s.infraCluster
