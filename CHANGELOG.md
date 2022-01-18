@@ -7,11 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## Added
+### Added
 
 - Add MC metadata to hosted zones.
 
-## Fixed
+### Changed
+
+- Read the cluster hosted zone only once per operation.
+
+### Fixed
 
 - Do not fail on already deleted entries.
 - Remove `alreadyExistsError` on creation/update as it's obsolete with UPSERT.

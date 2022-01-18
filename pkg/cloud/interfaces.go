@@ -32,6 +32,8 @@ type ClusterScoper interface {
 	BaseDomain() string
 	// ClusterK8sClient returns a client to interact with the cluster.
 	ClusterK8sClient(ctx context.Context) (client.Client, error)
+	// ClusterDomain returns the cluster domain.
+	ClusterDomain() string
 	// InfrastructureCluster returns the infrastructure cluster object.
 	InfrastructureCluster() *capo.OpenStackCluster
 	// ManagementCluster returns the name of the management cluster.
