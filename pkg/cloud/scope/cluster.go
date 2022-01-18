@@ -30,7 +30,6 @@ type ClusterScopeParams struct {
 	Logger logr.Logger
 
 	BaseDomain            string
-	CoreCluster           *capi.Cluster
 	InfrastructureCluster *capo.OpenStackCluster
 	ManagementCluster     string
 }
@@ -44,9 +43,6 @@ func NewClusterScope(ctx context.Context, params ClusterScopeParams) (*ClusterSc
 
 	if params.BaseDomain == "" {
 		return nil, microerror.Maskf(invalidConfigError, "failed to generate new scope from empty BaseDomain")
-	}
-	if params.CoreCluster == nil {
-		return nil, microerror.Maskf(invalidConfigError, "failed to generate new scope from nil CoreCluster")
 	}
 	if params.InfrastructureCluster == nil {
 		return nil, microerror.Maskf(invalidConfigError, "failed to generate new scope from nil InfrastructureCluster")
@@ -63,7 +59,6 @@ func NewClusterScope(ctx context.Context, params ClusterScopeParams) (*ClusterSc
 		session: awsSession,
 
 		baseDomain:        params.BaseDomain,
-		coreCluster:       params.CoreCluster,
 		infraCluster:      params.InfrastructureCluster,
 		managementCluster: params.ManagementCluster,
 	}, nil
@@ -77,7 +72,6 @@ type ClusterScope struct {
 	session   awsclient.ConfigProvider
 
 	baseDomain        string
-	coreCluster       *capi.Cluster
 	infraCluster      *capo.OpenStackCluster
 	managementCluster string
 }
@@ -90,11 +84,6 @@ func (s *ClusterScope) APIEndpoint() string {
 // BaseDomain returns the cluster basedomain.
 func (s *ClusterScope) BaseDomain() string {
 	return s.baseDomain
-}
-
-// CoreCluster returns the core cluster.
-func (s *ClusterScope) CoreCluster() *capi.Cluster {
-	return s.coreCluster
 }
 
 // InfrastructureCluster returns the infrastructure cluster.
@@ -111,7 +100,7 @@ func (s *ClusterScope) ManagementCluster() string {
 func (s *ClusterScope) ClusterK8sClient(ctx context.Context) (client.Client, error) {
 	if s.k8sClient == nil {
 		var err error
-		s.k8sClient, err = getClusterK8sClient(ctx, s.coreCluster)
+		s.k8sClient, err = s.getClusterK8sClient(ctx)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
@@ -122,7 +111,7 @@ func (s *ClusterScope) ClusterK8sClient(ctx context.Context) (client.Client, err
 
 // Name returns the Openstack infrastructure cluster name.
 func (s *ClusterScope) Name() string {
-	return s.coreCluster.Name
+	return s.infraCluster.Labels[capi.ClusterLabelName]
 }
 
 // Session returns the AWS SDK session. Used for creating cluster client.
@@ -130,13 +119,13 @@ func (s *ClusterScope) Session() awsclient.ConfigProvider {
 	return s.session
 }
 
-func getClusterK8sClient(ctx context.Context, cluster *capi.Cluster) (client.Client, error) {
+func (s *ClusterScope) getClusterK8sClient(ctx context.Context) (client.Client, error) {
 	newLogger, err := micrologger.New(micrologger.Config{})
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
 
-	kubeconfig, err := getClusterKubeConfig(ctx, cluster, newLogger)
+	kubeconfig, err := s.getClusterKubeConfig(ctx, newLogger)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
@@ -149,7 +138,7 @@ func getClusterK8sClient(ctx context.Context, cluster *capi.Cluster) (client.Cli
 	return getK8sClient(config, newLogger)
 }
 
-func getClusterKubeConfig(ctx context.Context, cluster *capi.Cluster, logger micrologger.Logger) (string, error) {
+func (s *ClusterScope) getClusterKubeConfig(ctx context.Context, logger micrologger.Logger) (string, error) {
 	config := k8srestconfig.Config{
 		Logger:    logger,
 		InCluster: true,
@@ -163,8 +152,8 @@ func getClusterKubeConfig(ctx context.Context, cluster *capi.Cluster, logger mic
 	var secret corev1.Secret
 
 	o := client.ObjectKey{
-		Name:      fmt.Sprintf("%s%s", cluster.Name, KubeConfigSecretSuffix),
-		Namespace: cluster.Namespace,
+		Name:      fmt.Sprintf("%s%s", s.Name(), KubeConfigSecretSuffix),
+		Namespace: s.infraCluster.Namespace,
 	}
 
 	if err := k8sClient.Get(ctx, o, &secret); err != nil {
