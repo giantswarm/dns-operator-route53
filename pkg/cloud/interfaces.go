@@ -30,6 +30,8 @@ type ClusterScoper interface {
 	APIEndpoint() string
 	// BaseDomain returns the base domain.
 	BaseDomain() string
+	// BastionIP returns the bastion IP.
+	BastionIP() string
 	// ClusterK8sClient returns a client to interact with the cluster.
 	ClusterK8sClient(ctx context.Context) (client.Client, error)
 	// ClusterDomain returns the cluster domain.
