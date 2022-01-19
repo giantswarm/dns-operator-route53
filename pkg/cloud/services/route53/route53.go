@@ -185,14 +185,16 @@ func (s *Service) changeClusterRecords(ctx context.Context, hostedZoneID string,
 
 	s.scope.Info(s.scope.APIEndpoint())
 
-	change := s.buildARecordChange(hostedZoneID, "api", s.scope.APIEndpoint(), actionUpsert)
-	input.ChangeBatch.Changes = append(input.ChangeBatch.Changes, change)
+	input.ChangeBatch.Changes = append(input.ChangeBatch.Changes,
+		s.buildARecordChange(hostedZoneID, "api", s.scope.APIEndpoint(), actionUpsert),
+	)
 
 	if s.scope.BastionIP() != "" {
 		s.scope.Info(s.scope.BastionIP())
 
-		change := s.buildARecordChange(hostedZoneID, "bastion1", s.scope.BastionIP(), actionUpsert)
-		input.ChangeBatch.Changes = append(input.ChangeBatch.Changes, change)
+		input.ChangeBatch.Changes = append(input.ChangeBatch.Changes,
+			s.buildARecordChange(hostedZoneID, "bastion1", s.scope.BastionIP(), actionUpsert),
+		)
 	}
 
 	if _, err := s.Route53Client.ChangeResourceRecordSetsWithContext(ctx, input); err != nil {
