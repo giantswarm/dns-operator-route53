@@ -37,7 +37,7 @@ func (s *Service) DeleteRoute53(ctx context.Context) error {
 	}
 
 	// Then delete delegation record in base hosted zone
-	err = s.changeClusterNSDelegation(ctx, actionDelete)
+	err = s.changeClusterNSDelegation(ctx, hostedZoneID, actionDelete)
 	if IsNotFound(err) {
 		// Entry does not exist, fall through
 	} else if err != nil {
@@ -68,7 +68,7 @@ func (s *Service) ReconcileRoute53(ctx context.Context) error {
 		return microerror.Mask(err)
 	}
 
-	if err := s.changeClusterNSDelegation(ctx, actionUpsert); err != nil {
+	if err := s.changeClusterNSDelegation(ctx, hostedZoneID, actionUpsert); err != nil {
 		return microerror.Mask(err)
 	}
 
@@ -135,19 +135,19 @@ func (s *Service) changeClusterIngressRecords(ctx context.Context, hostedZoneID,
 	return nil
 }
 
-func (s *Service) changeClusterNSDelegation(ctx context.Context, action string) error {
-	hostedZoneID, err := s.describeBaseHostedZone(ctx)
-	if err != nil {
-		return microerror.Mask(err)
-	}
-
+func (s *Service) changeClusterNSDelegation(ctx context.Context, hostedZoneID, action string) error {
 	records, err := s.listClusterNSRecords(ctx, hostedZoneID)
 	if err != nil {
 		return microerror.Mask(err)
 	}
 
+	baseHostedZoneID, err := s.describeBaseHostedZone(ctx)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
 	input := &route53.ChangeResourceRecordSetsInput{
-		HostedZoneId: aws.String(hostedZoneID),
+		HostedZoneId: aws.String(baseHostedZoneID),
 		ChangeBatch: &route53.ChangeBatch{
 			Changes: []*route53.Change{
 				{
