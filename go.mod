@@ -7,18 +7,17 @@ require (
 	github.com/giantswarm/k8sclient/v6 v6.1.0
 	github.com/giantswarm/microerror v0.4.0
 	github.com/giantswarm/micrologger v0.6.0
-	github.com/go-logr/logr v0.4.0
+	github.com/go-logr/logr v1.2.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.12.0
-	k8s.io/api v0.22.2
-	k8s.io/apimachinery v0.22.2
-	k8s.io/client-go v0.22.2
-	k8s.io/component-base v0.22.2
+	k8s.io/api v0.23.0
+	k8s.io/apimachinery v0.23.0
+	k8s.io/client-go v0.23.0
+	k8s.io/component-base v0.23.0
 	k8s.io/klog v1.0.0
 	sigs.k8s.io/cluster-api v0.4.0
 	sigs.k8s.io/cluster-api-provider-openstack v0.4.0
-	sigs.k8s.io/controller-runtime v0.9.7
-	sigs.k8s.io/yaml v1.3.0 // indirect
+	sigs.k8s.io/controller-runtime v0.11.0
 )
 
 replace (
