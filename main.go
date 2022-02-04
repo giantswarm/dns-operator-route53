@@ -17,15 +17,13 @@ limitations under the License.
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"os"
-	"strings"
 
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
-	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -33,7 +31,8 @@ import (
 	capi "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/giantswarm/dns-operator-openstack/controllers"
+	"github.com/giantswarm/dns-operator-openstack/controllers/cluster"
+	"github.com/giantswarm/dns-operator-openstack/pkg/log"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -58,56 +57,6 @@ func main() {
 	}
 }
 
-type loggerAdapter struct {
-	micrologger.Logger
-	verbosity int
-	names     []string
-}
-
-func (m loggerAdapter) Enabled() bool {
-	return m.verbosity > 0
-}
-
-func (m loggerAdapter) Info(msg string, keysAndValues ...interface{}) {
-	if m.verbosity < 2 {
-		return
-	}
-	m.withName().With(keysAndValues...).With("level", "info").Log("message", msg)
-}
-
-func (m loggerAdapter) Error(err error, msg string, keysAndValues ...interface{}) {
-	if m.verbosity < 1 {
-		return
-	}
-	m.withName().With(keysAndValues...).Errorf(context.Background(), err, msg)
-}
-
-func (m loggerAdapter) withName() loggerAdapter {
-	wrapperCopy := m
-	if len(m.names) == 0 {
-		wrapperCopy.Logger = m.Logger.With("name", strings.Join(m.names, "."))
-	}
-	return wrapperCopy
-}
-
-func (m loggerAdapter) V(level int) logr.Logger {
-	wrapperCopy := m
-	wrapperCopy.verbosity = level
-	return wrapperCopy
-}
-
-func (m loggerAdapter) WithValues(keysAndValues ...interface{}) logr.Logger {
-	wrapperCopy := m
-	wrapperCopy.Logger = m.Logger.With(keysAndValues...)
-	return wrapperCopy
-}
-
-func (m loggerAdapter) WithName(name string) logr.Logger {
-	wrapperCopy := m
-	wrapperCopy.names = append(m.names[:], name)
-	return wrapperCopy
-}
-
 func mainE() error {
 	var (
 		baseDomain           string
@@ -124,7 +73,7 @@ func mainE() error {
 
 	flag.StringVar(&baseDomain, "base-domain", "", "Domain for which to create the DNS entries, e.g. customer.gigantic.io.")
 	flag.StringVar(&managementCluster, "management-cluster", "", "Name of the management cluster.")
-	flag.IntVar(&verbosity, "verbosity", 3, "Name of the management cluster.")
+	flag.IntVar(&verbosity, "verbosity", 3, "Level of verbosity. At higher verbosity levels more information will be printed during execution.")
 
 	flag.Parse()
 
@@ -134,9 +83,9 @@ func mainE() error {
 		return microerror.Mask(err)
 	}
 
-	ctrl.SetLogger(loggerAdapter{
+	ctrl.SetLogger(log.Logger{
 		Logger:    logger,
-		verbosity: verbosity,
+		Verbosity: verbosity,
 	})
 
 	config, err := ctrl.GetConfig()
@@ -156,14 +105,26 @@ func mainE() error {
 		return microerror.Mask(err)
 	}
 
-	if err = (&controllers.OpenstackClusterReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("OpenstackCluster"),
+	awsSession, err := session.NewSession()
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	clusterReconciler, err := cluster.New(cluster.Config{
+		AWSSession: awsSession,
+		Client:     mgr.GetClient(),
+		Logger:     ctrl.Log.WithName("controllers").WithName(cluster.Name),
 
 		BaseDomain:        baseDomain,
 		ManagementCluster: managementCluster,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "OpenstackCluster")
+	})
+	if err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", cluster.Name)
+		return microerror.Mask(err)
+	}
+
+	if err = clusterReconciler.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to setup controller", "controller", cluster.Name)
 		return microerror.Mask(err)
 	}
 	// +kubebuilder:scaffold:builder

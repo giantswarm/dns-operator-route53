@@ -5,18 +5,17 @@ import (
 	"fmt"
 
 	awsclient "github.com/aws/aws-sdk-go/aws/client"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/giantswarm/k8sclient/v6/pkg/k8sclient"
 	"github.com/giantswarm/k8sclient/v6/pkg/k8srestconfig"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
-	"k8s.io/klog/klogr"
 	capo "sigs.k8s.io/cluster-api-provider-openstack/api/v1alpha4"
 	capi "sigs.k8s.io/cluster-api/api/v1alpha4"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/giantswarm/dns-operator-openstack/pkg/log"
 )
 
 const (
@@ -25,55 +24,37 @@ const (
 	KubeConfigSecretKey    = "value"
 )
 
-// ClusterScopeParams defines the input parameters used to create a new Scope.
-type ClusterScopeParams struct {
-	Logger logr.Logger
-
-	BaseDomain            string
-	InfrastructureCluster *capo.OpenStackCluster
-	ManagementCluster     string
-}
-
 // NewClusterScope creates a new Scope from the supplied parameters.
 // This is meant to be called for each reconcile iteration.
 func NewClusterScope(ctx context.Context, params ClusterScopeParams) (*ClusterScope, error) {
-	if params.Logger == nil {
-		params.Logger = klogr.New()
+	if params.AWSSession == nil {
+		return nil, microerror.Maskf(invalidConfigError, fmt.Sprintf("%T.AWSSession is required", params))
 	}
-
+	if params.ManagementClient == nil {
+		return nil, microerror.Maskf(invalidConfigError, fmt.Sprintf("%T.ManagementClient is required", params))
+	}
+	if params.Logger == nil {
+		return nil, microerror.Maskf(invalidConfigError, fmt.Sprintf("%T.Logger is required", params))
+	}
 	if params.BaseDomain == "" {
-		return nil, microerror.Maskf(invalidConfigError, "failed to generate new scope from empty BaseDomain")
+		return nil, microerror.Maskf(invalidConfigError, fmt.Sprintf("%T.BaseDomain is required", params))
 	}
 	if params.InfrastructureCluster == nil {
-		return nil, microerror.Maskf(invalidConfigError, "failed to generate new scope from nil InfrastructureCluster")
+		return nil, microerror.Maskf(invalidConfigError, fmt.Sprintf("%T.InfrastructureCluster is required", params))
 	}
-
-	awsSession, err := session.NewSession()
-	if err != nil {
-		return nil, microerror.Mask(err)
+	if params.ManagementCluster == "" {
+		return nil, microerror.Maskf(invalidConfigError, fmt.Sprintf("%T.ManagementCluster is required", params))
 	}
 
 	return &ClusterScope{
-		Logger: params.Logger,
-
-		session: awsSession,
+		awsSession:       params.AWSSession,
+		managementClient: params.ManagementClient,
+		Logger:           params.Logger,
 
 		baseDomain:        params.BaseDomain,
 		infraCluster:      params.InfrastructureCluster,
 		managementCluster: params.ManagementCluster,
 	}, nil
-}
-
-// ClusterScope defines the basic context for an actuator to operate upon.
-type ClusterScope struct {
-	logr.Logger
-
-	k8sClient client.Client
-	session   awsclient.ConfigProvider
-
-	baseDomain        string
-	infraCluster      *capo.OpenStackCluster
-	managementCluster string
 }
 
 // APIEndpoint returns the Openstack infrastructure Kubernetes API endpoint.
@@ -107,15 +88,15 @@ func (s *ClusterScope) ManagementCluster() string {
 
 // ClusterK8sClient returns a client to interact with the cluster.
 func (s *ClusterScope) ClusterK8sClient(ctx context.Context) (client.Client, error) {
-	if s.k8sClient == nil {
+	if s.workloadClient == nil {
 		var err error
-		s.k8sClient, err = s.getClusterK8sClient(ctx)
+		s.workloadClient, err = s.getClusterK8sClient(ctx)
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
 	}
 
-	return s.k8sClient, nil
+	return s.workloadClient, nil
 }
 
 // ClusterDomain returns the cluster domain.
@@ -130,56 +111,41 @@ func (s *ClusterScope) Name() string {
 
 // Session returns the AWS SDK session. Used for creating cluster client.
 func (s *ClusterScope) Session() awsclient.ConfigProvider {
-	return s.session
+	return s.awsSession
+}
+
+type nopWriter struct{}
+
+func (w nopWriter) Write(p []byte) (n int, err error) {
+	return len(p), nil
+}
+
+func (s *ClusterScope) loggerAsMicrologger() (micrologger.Logger, error) {
+	if adapter, ok := s.Logger.(log.Logger); ok {
+		return adapter.Logger, nil
+	}
+	return micrologger.New(micrologger.Config{
+		IOWriter: nopWriter{},
+	})
 }
 
 func (s *ClusterScope) getClusterK8sClient(ctx context.Context) (client.Client, error) {
-	newLogger, err := micrologger.New(micrologger.Config{})
+	kubeconfig, err := s.getClusterKubeConfig(ctx)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
 
-	kubeconfig, err := s.getClusterKubeConfig(ctx, newLogger)
+	logger, err := s.loggerAsMicrologger()
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
 
 	config := k8srestconfig.Config{
-		Logger:     newLogger,
+		Logger:     logger,
 		KubeConfig: kubeconfig,
 	}
 
-	return getK8sClient(config, newLogger)
-}
-
-func (s *ClusterScope) getClusterKubeConfig(ctx context.Context, logger micrologger.Logger) (string, error) {
-	config := k8srestconfig.Config{
-		Logger:    logger,
-		InCluster: true,
-	}
-
-	k8sClient, err := getK8sClient(config, logger)
-	if err != nil {
-		return "", microerror.Mask(err)
-	}
-
-	var secret corev1.Secret
-
-	o := client.ObjectKey{
-		Name:      fmt.Sprintf("%s%s", s.Name(), KubeConfigSecretSuffix),
-		Namespace: s.infraCluster.Namespace,
-	}
-
-	if err := k8sClient.Get(ctx, o, &secret); err != nil {
-		return "", microerror.Mask(err)
-	}
-
-	return string(secret.Data[KubeConfigSecretKey]), nil
-}
-
-func getK8sClient(config k8srestconfig.Config, logger micrologger.Logger) (client.Client, error) {
 	var restConfig *rest.Config
-	var err error
 	{
 		restConfig, err = k8srestconfig.New(config)
 		if err != nil {
@@ -203,4 +169,18 @@ func getK8sClient(config k8srestconfig.Config, logger micrologger.Logger) (clien
 	}
 
 	return ctrlClient, nil
+}
+
+func (s *ClusterScope) getClusterKubeConfig(ctx context.Context) (string, error) {
+	var secret corev1.Secret
+	o := client.ObjectKey{
+		Name:      fmt.Sprintf("%s%s", s.Name(), KubeConfigSecretSuffix),
+		Namespace: s.infraCluster.Namespace,
+	}
+
+	if err := s.managementClient.Get(ctx, o, &secret); err != nil {
+		return "", microerror.Mask(err)
+	}
+
+	return string(secret.Data[KubeConfigSecretKey]), nil
 }
