@@ -134,7 +134,10 @@ func mainE() error {
 		return microerror.Mask(err)
 	}
 
-	ctrl.SetLogger(loggerAdapter{Logger: logger})
+	ctrl.SetLogger(loggerAdapter{
+		Logger:    logger,
+		verbosity: verbosity,
+	})
 
 	config, err := ctrl.GetConfig()
 	if err != nil {
