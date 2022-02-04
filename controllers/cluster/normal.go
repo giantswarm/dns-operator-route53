@@ -17,9 +17,9 @@ import (
 func (r *Reconciler) reconcileNormal(ctx context.Context, clusterScope cloud.ClusterScoper) (reconcile.Result, error) {
 	clusterScope.Info("Reconciling normal")
 
-	{
-		// If the openstackCluster doesn't have the finalizer, add it.
-		openstackCluster := clusterScope.InfrastructureCluster()
+	// If the openstackCluster doesn't have the finalizer, add it.
+	openstackCluster := clusterScope.InfrastructureCluster()
+	if !controllerutil.ContainsFinalizer(openstackCluster, key.DNSFinalizerName) {
 		controllerutil.AddFinalizer(openstackCluster, key.DNSFinalizerName)
 		// Register the finalizer immediately to avoid orphaning openstack resources on delete
 		if err := r.client.Update(ctx, openstackCluster); err != nil {

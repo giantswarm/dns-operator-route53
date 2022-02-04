@@ -27,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	"k8s.io/klog/v2"
 	capo "sigs.k8s.io/cluster-api-provider-openstack/api/v1alpha4"
 	capi "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -75,18 +76,24 @@ func mainE() error {
 	flag.StringVar(&managementCluster, "management-cluster", "", "Name of the management cluster.")
 	flag.IntVar(&verbosity, "verbosity", 3, "Level of verbosity. At higher verbosity levels more information will be printed during execution.")
 
+	klog.InitFlags(nil)
+
 	flag.Parse()
 
 	// Create a new logger which is used by all packages.
-	logger, err := micrologger.New(micrologger.Config{})
+	microLogger, err := micrologger.New(micrologger.Config{})
 	if err != nil {
 		return microerror.Mask(err)
 	}
 
-	ctrl.SetLogger(log.Logger{
-		Logger:    logger,
-		Verbosity: verbosity,
-	})
+	{
+		logrLogger := log.Logger{
+			Logger:    microLogger,
+			Verbosity: verbosity,
+		}
+		ctrl.SetLogger(logrLogger)
+		klog.SetLogger(logrLogger)
+	}
 
 	config, err := ctrl.GetConfig()
 	if err != nil {
@@ -113,18 +120,18 @@ func mainE() error {
 	clusterReconciler, err := cluster.New(cluster.Config{
 		AWSSession: awsSession,
 		Client:     mgr.GetClient(),
-		Logger:     ctrl.Log.WithName("controllers").WithName(cluster.Name),
+		Logger:     ctrl.Log.WithName("controllers").WithName(cluster.ControllerName),
 
 		BaseDomain:        baseDomain,
 		ManagementCluster: managementCluster,
 	})
 	if err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", cluster.Name)
+		setupLog.Error(err, "unable to create controller", "controller", cluster.ControllerName)
 		return microerror.Mask(err)
 	}
 
 	if err = clusterReconciler.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to setup controller", "controller", cluster.Name)
+		setupLog.Error(err, "unable to setup controller", "controller", cluster.ControllerName)
 		return microerror.Mask(err)
 	}
 	// +kubebuilder:scaffold:builder

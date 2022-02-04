@@ -104,7 +104,7 @@ func (s *ClusterScope) ClusterDomain() string {
 	return fmt.Sprintf("%s.%s", s.Name(), s.baseDomain)
 }
 
-// Name returns the Openstack cluster name.
+// Name returns the name of the Cluster which owns the OpenStackCluster.
 func (s *ClusterScope) Name() string {
 	return s.infraCluster.Labels[capi.ClusterLabelName]
 }
@@ -130,6 +130,11 @@ func (s *ClusterScope) loggerAsMicrologger() (micrologger.Logger, error) {
 }
 
 func (s *ClusterScope) getClusterK8sClient(ctx context.Context) (client.Client, error) {
+	// Reconciling the self-managed cluster, use management client instead of an external client.
+	if s.Name() == s.managementCluster && s.infraCluster.Namespace == "giantswarm" {
+		return s.managementClient, nil
+	}
+
 	kubeconfig, err := s.getClusterKubeConfig(ctx)
 	if err != nil {
 		return nil, microerror.Mask(err)

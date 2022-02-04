@@ -16,7 +16,7 @@ import (
 	"github.com/giantswarm/dns-operator-openstack/pkg/cloud/scope"
 )
 
-const Name = "cluster"
+const ControllerName = "cluster"
 
 func New(config Config) (*Reconciler, error) {
 	if config.Client == nil {

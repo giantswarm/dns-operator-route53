@@ -38,7 +38,7 @@ func (m Logger) withName() Logger {
 	if len(m.names) == 0 {
 		wrapperCopy.Logger = m.Logger.With("name", strings.Join(m.names, "."))
 	}
-	wrapperCopy.Logger = m.Logger.With("caller", stack.Caller(3))
+	wrapperCopy.Logger = m.Logger.With("caller", stack.Caller(2))
 	return wrapperCopy
 }
 
