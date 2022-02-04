@@ -7,7 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## Fixed
+## [0.3.0] - 2022-02-01
+
+### Changed
+
+- Bump capo dependency to v0.5.0.
+
+## [0.2.1] - 2022-01-20
+
+### Fixed
+
+- Fix bug with NS delegation.
+
+## [0.2.0] - 2022-01-19
+
+### Added
+
+- Add MC metadata to hosted zones.
+- Create route53 entries for bastion.
+
+### Changed
+
+- Read the cluster hosted zone only once per operation.
+
+### Fixed
 
 - Do not fail on already deleted entries.
 - Remove `alreadyExistsError` on creation/update as it's obsolete with UPSERT.
@@ -37,6 +60,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Create api and ingress entries in Route53.
 
-[Unreleased]: https://github.com/giantswarm/dns-operator-openstack/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/giantswarm/giantswarm/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/giantswarm/giantswarm/compare/v0.2.1...v0.3.0
+[0.2.1]: https://github.com/giantswarm/dns-operator-openstack/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/giantswarm/dns-operator-openstack/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/giantswarm/dns-operator-openstack/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/giantswarm/dns-operator-openstack/releases/tag/v0.1.0
