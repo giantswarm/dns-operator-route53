@@ -317,7 +317,7 @@ func (s *Service) findHostedZoneByDNSName(ctx context.Context, dnsName string) (
 
 	if len(out.HostedZones) == 0 {
 		return nil, microerror.Mask(hostedZoneNotFoundError)
-	} else if *out.HostedZones[0].Name != fmt.Sprintf("%s.", s.scope.ClusterDomain()) {
+	} else if *out.HostedZones[0].Name != fmt.Sprintf("%s.", dnsName) {
 		return nil, microerror.Mask(hostedZoneNotFoundError)
 	}
 
