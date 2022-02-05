@@ -313,7 +313,11 @@ func (s *Service) findHostedZoneByDNSName(ctx context.Context, dnsName string) (
 	out, err := s.Route53Client.ListHostedZonesByNameWithContext(ctx, input)
 	if err != nil {
 		return nil, wrapRoute53Error(err)
-	} else if len(out.HostedZones) == 0 || *out.HostedZones[0].Name != dnsName {
+	}
+
+	if len(out.HostedZones) == 0 {
+		return nil, microerror.Mask(hostedZoneNotFoundError)
+	} else if *out.HostedZones[0].Name != fmt.Sprintf("%s.", s.scope.ClusterDomain()) {
 		return nil, microerror.Mask(hostedZoneNotFoundError)
 	}
 
