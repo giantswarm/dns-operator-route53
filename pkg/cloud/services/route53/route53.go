@@ -3,7 +3,6 @@ package route53
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -27,7 +26,7 @@ func (s *Service) DeleteRoute53(ctx context.Context) error {
 	logger := s.scope.WithValues("clusterDomain", s.scope.ClusterDomain())
 	logger.Info("deleting route53 resources")
 
-	hostedZoneID, err := s.findHostedZoneByDNSName(ctx, s.scope.ClusterDomain())
+	hostedZoneID, err := s.findHostedZoneIDByDNSName(ctx, s.scope.ClusterDomain())
 	if IsHostedZoneNotFound(err) {
 		s.scope.Info("hosted zone not found")
 		return nil
@@ -71,7 +70,7 @@ func (s *Service) ReconcileRoute53(ctx context.Context) error {
 	logger.Info("creating or updating route53 resources")
 
 	// Describe or create.
-	hostedZoneID, err := s.findHostedZoneByDNSName(ctx, s.scope.ClusterDomain())
+	hostedZoneID, err := s.findHostedZoneIDByDNSName(ctx, s.scope.ClusterDomain())
 	if IsHostedZoneNotFound(err) {
 		logger.Info("existing hosted zone not found, creating new hosted zone")
 		hostedZoneID, err = s.createClusterHostedZone(ctx)
@@ -107,7 +106,7 @@ func (s *Service) ReconcileRoute53(ctx context.Context) error {
 	return nil
 }
 
-func (s *Service) buildARecordChange(hostedZoneID, recordName, recordValue, action string) *route53.Change {
+func (s *Service) buildARecordChange(recordName, recordValue, action string) *route53.Change {
 	return &route53.Change{
 		Action: aws.String(action),
 		ResourceRecordSet: &route53.ResourceRecordSet{
@@ -136,7 +135,7 @@ func (s *Service) upsertClusterIngressRecords(ctx context.Context, hostedZoneID 
 		HostedZoneId: aws.String(hostedZoneID),
 		ChangeBatch: &route53.ChangeBatch{
 			Changes: []*route53.Change{
-				s.buildARecordChange(hostedZoneID, "ingress", ingressIP, actionUpsert),
+				s.buildARecordChange("ingress", ingressIP, actionUpsert),
 				{
 					Action: aws.String(actionUpsert),
 					ResourceRecordSet: &route53.ResourceRecordSet{
@@ -166,7 +165,7 @@ func (s *Service) changeClusterNSDelegation(ctx context.Context, hostedZoneID, a
 		return microerror.Mask(err)
 	}
 
-	baseHostedZoneID, err := s.findHostedZoneByDNSName(ctx, s.scope.BaseDomain())
+	baseHostedZoneID, err := s.findHostedZoneIDByDNSName(ctx, s.scope.BaseDomain())
 	if err != nil {
 		return microerror.Mask(err)
 	}
@@ -208,15 +207,15 @@ func (s *Service) upsertClusterRecords(ctx context.Context, hostedZoneID string)
 		return microerror.Mask(aws.ErrMissingEndpoint)
 	}
 
-	s.scope.Info(fmt.Sprintf("Found API endpoint IP: %s", s.scope.APIEndpoint()))
+	s.scope.Info(fmt.Sprintf("found API endpoint IP: %s", s.scope.APIEndpoint()))
 	input.ChangeBatch.Changes = append(input.ChangeBatch.Changes,
-		s.buildARecordChange(hostedZoneID, "api", s.scope.APIEndpoint(), actionUpsert),
+		s.buildARecordChange("api", s.scope.APIEndpoint(), actionUpsert),
 	)
 
 	if s.scope.BastionIP() != "" {
-		s.scope.Info(fmt.Sprintf("Found bastion IP: %s", s.scope.BastionIP()))
+		s.scope.Info(fmt.Sprintf("found bastion IP: %s", s.scope.BastionIP()))
 		input.ChangeBatch.Changes = append(input.ChangeBatch.Changes,
-			s.buildARecordChange(hostedZoneID, "bastion1", s.scope.BastionIP(), actionUpsert),
+			s.buildARecordChange("bastion1", s.scope.BastionIP(), actionUpsert),
 		)
 	}
 
@@ -231,13 +230,11 @@ func (s *Service) createClusterHostedZone(ctx context.Context) (string, error) {
 	input := &route53.CreateHostedZoneInput{
 		CallerReference: aws.String(now.UTC().String()),
 		Name:            aws.String(fmt.Sprintf("%s.", s.scope.ClusterDomain())),
+		HostedZoneConfig: &route53.HostedZoneConfig{
+			Comment: aws.String(fmt.Sprintf("management_cluster: %s", s.scope.ManagementCluster())),
+		},
 	}
 
-	if s.scope.ManagementCluster() != "" {
-		input.HostedZoneConfig = &route53.HostedZoneConfig{
-			Comment: aws.String(fmt.Sprintf("management_cluster: %s", s.scope.ManagementCluster())),
-		}
-	}
 	output, err := s.Route53Client.CreateHostedZoneWithContext(ctx, input)
 	if err != nil {
 		return "", wrapRoute53Error(err)
@@ -264,7 +261,7 @@ func (s *Service) deleteClusterRecords(ctx context.Context, hostedZoneID string)
 	}
 
 	for _, recordSet := range output.ResourceRecordSets {
-		if strings.TrimSuffix(*recordSet.Name, ".") == s.scope.ClusterDomain() {
+		if *recordSet.Type == route53.RRTypeSoa || *recordSet.Type == route53.RRTypeNs {
 			// We cannot delete those entries, they get automatically cleaned up when deleting the hosted zone
 			continue
 		}
@@ -288,20 +285,18 @@ func (s *Service) deleteClusterRecords(ctx context.Context, hostedZoneID string)
 	return nil
 }
 
-func (s *Service) findHostedZoneByDNSName(ctx context.Context, dnsName string) (string, error) {
+func (s *Service) findHostedZoneIDByDNSName(ctx context.Context, dnsName string) (string, error) {
 	input := &route53.ListHostedZonesByNameInput{
 		DNSName: aws.String(dnsName),
 	}
 	out, err := s.Route53Client.ListHostedZonesByNameWithContext(ctx, input)
 	if err != nil {
 		return "", wrapRoute53Error(err)
-	} else if len(out.HostedZones) == 0 {
+	} else if len(out.HostedZones) != 1 {
 		return "", microerror.Mask(hostedZoneNotFoundError)
 	}
 
 	hostedZoneID := *out.HostedZones[0].Id
-	s.scope.Info(fmt.Sprintf("found hosted zone id %s for domain %s", hostedZoneID, dnsName))
-
 	return hostedZoneID, nil
 }
 

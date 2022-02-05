@@ -106,7 +106,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	if !coreCluster.Status.ControlPlaneReady {
-		log.Info("Control plane not ready yet, requeueing")
+		log.Info("control plane not ready yet")
 		return ctrl.Result{Requeue: true}, nil
 	}
 

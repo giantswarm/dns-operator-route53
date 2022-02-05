@@ -15,7 +15,7 @@ import (
 )
 
 func (r *Reconciler) reconcileNormal(ctx context.Context, clusterScope cloud.ClusterScoper) (reconcile.Result, error) {
-	clusterScope.Info("Reconciling normal")
+	clusterScope.Info("reconciling normal")
 
 	// If the openstackCluster doesn't have the finalizer, add it.
 	openstackCluster := clusterScope.InfrastructureCluster()

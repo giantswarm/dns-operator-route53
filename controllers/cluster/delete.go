@@ -15,12 +15,11 @@ import (
 )
 
 func (r *Reconciler) reconcileDelete(ctx context.Context, clusterScope cloud.ClusterScoper) (reconcile.Result, error) {
-	clusterScope.Info("Reconciling delete")
+	clusterScope.Info("reconciling delete")
 
 	route53Service := route53.NewService(clusterScope)
 
 	if err := route53Service.DeleteRoute53(ctx); err != nil {
-		clusterScope.Error(err, "error deleting route53")
 		return reconcile.Result{}, microerror.Mask(err)
 	}
 
