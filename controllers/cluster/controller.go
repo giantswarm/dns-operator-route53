@@ -105,9 +105,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return r.reconcileDelete(ctx, clusterScope)
 	}
 
-	if !coreCluster.Status.ControlPlaneReady {
-		log.Info("control plane not ready yet")
-		return ctrl.Result{Requeue: true}, nil
+	if !infraCluster.Status.Ready {
+		log.Info("cluster not ready yet")
+		return ctrl.Result{}, nil
 	}
 
 	// Handle non-deleted clusters
