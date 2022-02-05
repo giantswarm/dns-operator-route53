@@ -2,7 +2,6 @@ package cluster
 
 import (
 	"context"
-	"time"
 
 	"github.com/giantswarm/microerror"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -23,17 +22,17 @@ func (r *Reconciler) reconcileDelete(ctx context.Context, clusterScope cloud.Clu
 		return reconcile.Result{}, microerror.Mask(err)
 	}
 
-	{
-		// Resources are deleted so remove the finalizer.
-		openstackCluster := clusterScope.InfrastructureCluster()
+	openstackCluster := clusterScope.InfrastructureCluster()
+	if controllerutil.ContainsFinalizer(openstackCluster, key.DNSFinalizerName) {
+		clusterScope.Info("removing finalizer")
 		controllerutil.RemoveFinalizer(openstackCluster, key.DNSFinalizerName)
 		if err := r.client.Update(ctx, openstackCluster); err != nil {
 			return reconcile.Result{}, microerror.Mask(err)
 		}
+		clusterScope.Info("removed finalizer")
 	}
 
-	return ctrl.Result{
-		Requeue:      true,
-		RequeueAfter: time.Minute * 5,
-	}, nil
+	clusterScope.Info("reconciled delete")
+
+	return ctrl.Result{}, nil
 }
