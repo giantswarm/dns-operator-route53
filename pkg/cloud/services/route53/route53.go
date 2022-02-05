@@ -91,7 +91,7 @@ func (s *Service) ReconcileRoute53(ctx context.Context) error {
 	logger = logger.WithValues("hostedZoneID", *hostedZone.Id)
 
 	expectedComment := fmt.Sprintf("management_cluster: %s", s.scope.ManagementCluster())
-	if *hostedZone.Config.Comment != expectedComment {
+	if hostedZone.Config == nil || hostedZone.Config.Comment == nil || *hostedZone.Config.Comment != expectedComment {
 		err = s.updateHostedZoneComment(ctx, *hostedZone.Id, expectedComment)
 		if err != nil {
 			return microerror.Mask(err)
