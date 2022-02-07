@@ -8,14 +8,11 @@ import (
 	"github.com/giantswarm/k8sclient/v6/pkg/k8sclient"
 	"github.com/giantswarm/k8sclient/v6/pkg/k8srestconfig"
 	"github.com/giantswarm/microerror"
-	"github.com/giantswarm/micrologger"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
 	capo "sigs.k8s.io/cluster-api-provider-openstack/api/v1alpha4"
 	capi "sigs.k8s.io/cluster-api/api/v1alpha4"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/giantswarm/dns-operator-openstack/pkg/log"
 )
 
 const (
@@ -114,21 +111,6 @@ func (s *ClusterScope) Session() awsclient.ConfigProvider {
 	return s.awsSession
 }
 
-type nopWriter struct{}
-
-func (w nopWriter) Write(p []byte) (n int, err error) {
-	return len(p), nil
-}
-
-func (s *ClusterScope) loggerAsMicrologger() (micrologger.Logger, error) {
-	if adapter, ok := s.Logger.(log.Logger); ok {
-		return adapter.Logger, nil
-	}
-	return micrologger.New(micrologger.Config{
-		IOWriter: nopWriter{},
-	})
-}
-
 func (s *ClusterScope) getClusterK8sClient(ctx context.Context) (client.Client, error) {
 	// Reconciling the self-managed cluster, use management client instead of an external client.
 	if s.Name() == s.managementCluster && s.infraCluster.Namespace == "giantswarm" {
@@ -140,13 +122,8 @@ func (s *ClusterScope) getClusterK8sClient(ctx context.Context) (client.Client, 
 		return nil, microerror.Mask(err)
 	}
 
-	logger, err := s.loggerAsMicrologger()
-	if err != nil {
-		return nil, microerror.Mask(err)
-	}
-
 	config := k8srestconfig.Config{
-		Logger:     logger,
+		Logger:     s.Logger,
 		KubeConfig: kubeconfig,
 	}
 
@@ -161,7 +138,7 @@ func (s *ClusterScope) getClusterK8sClient(ctx context.Context) (client.Client, 
 	var ctrlClient client.Client
 	{
 		c := k8sclient.ClientsConfig{
-			Logger:     logger,
+			Logger:     s.Logger,
 			RestConfig: restConfig,
 		}
 

@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add more extensive logging for understanding the reconciliation process.
+- Add RBAC permission to list secrets and get/watch/list services to enable informers to function when
+  using the controller client to access the management cluster.
+- Update hosted zone comments that don't match the desired comment.
+
+### Changed
+
+- Use the controller client for accessing the Kubernetes API of the management cluster.
+- Move cluster controller into its own package.
+- Use `micrologger` as the sink for `klog` and `controller-runtime`.
+- Combine `describeBaseHostedZone` and `describeClusterHostedZone` into `findHostedZoneByDNSName`.
+- Update `cluster-api` dependency to v1.1.0 and `controller-runtime` to v0.11.0.
+
 ## [0.3.0] - 2022-02-01
 
 ### Changed

@@ -23,72 +23,73 @@ const (
 )
 
 func (s *Service) DeleteRoute53(ctx context.Context) error {
-	logger := s.scope.WithValues("clusterDomain", s.scope.ClusterDomain())
-	logger.Info("deleting route53 resources")
+	logger := s.scope.With("clusterDomain", s.scope.ClusterDomain())
+	logger.Log("deleting route53 resources")
 
 	hostedZone, err := s.findHostedZoneByDNSName(ctx, s.scope.ClusterDomain())
 	if IsHostedZoneNotFound(err) {
-		s.scope.Info("hosted zone not found")
+		s.scope.Info(ctx, "hosted zone not found")
 		// nothing to do
 		return nil
 	} else if err != nil {
 		return microerror.Mask(err)
 	}
-	logger = logger.WithValues("hostedZoneID", *hostedZone.Id)
+	logger = logger.With("hostedZoneID", *hostedZone.Id)
 
 	if *hostedZone.ResourceRecordSetCount != int64(2) {
-		logger.Info("deleting all dns records from zone")
+		logger.Info(ctx, "deleting all dns records from zone")
 		if err := s.deleteClusterRecords(ctx, *hostedZone.Id); err != nil {
 			return microerror.Mask(err)
 		}
-		logger.Info("deleted all dns records from zone")
+		logger.Info(ctx, "deleted all dns records from zone")
 	} else {
-		logger.Info("zone has no records to delete")
+		logger.Info(ctx, "zone has no records to delete")
 	}
 
 	// Then delete delegation record in base hosted zone
-	logger.Info("deleting delegation records from base hosted zone")
+	logger.Info(ctx, "deleting delegation records from base hosted zone")
 	err = s.changeClusterNSDelegation(ctx, *hostedZone.Id, actionDelete)
 	if IsNotFound(err) {
 		// Entry does not exist, fall through
-		logger.Info("no delegation entries found in base hosted zone")
+		logger.Info(ctx, "no delegation entries found in base hosted zone")
 	} else if err != nil {
 		return microerror.Mask(err)
 	} else {
-		logger.Info("deleted delegation records from base hosted zone")
+		logger.Info(ctx, "deleted delegation records from base hosted zone")
 	}
 
 	// Finally delete DNS zone for cluster
-	logger.Info("deleting hosted zone")
+	logger.Info(ctx, "deleting hosted zone")
 	err = s.deleteClusterHostedZone(ctx, *hostedZone.Id)
 	if err != nil {
 		return microerror.Mask(err)
 	}
-	logger.Info("deleted hosted zone for cluster")
-	logger.Info("route53 deletion complete")
+	logger.Info(ctx, "deleted hosted zone for cluster")
+	logger.Info(ctx, "route53 deletion complete")
 
 	return nil
 }
 
 func (s *Service) ReconcileRoute53(ctx context.Context) error {
-	logger := s.scope.WithValues("clusterDomain", s.scope.ClusterDomain())
-	logger.Info("creating or updating route53 resources")
+	logger := s.scope.With("clusterDomain", s.scope.ClusterDomain())
+	logger.Info(ctx, "creating or updating route53 resources")
 
 	// Describe or create.
 	hostedZone, err := s.findHostedZoneByDNSName(ctx, s.scope.ClusterDomain())
 	if IsHostedZoneNotFound(err) {
-		logger.Info("existing hosted zone not found, creating new hosted zone")
+		logger.Info(ctx, "existing hosted zone not found, creating new hosted zone")
 		hostedZone, err = s.createClusterHostedZone(ctx)
 		if err != nil {
 			return microerror.Mask(err)
 		}
-		logger.Info("created new hosted zone for cluster", "hostedZoneID", *hostedZone.Id)
+		logger = logger.With("hostedZoneID", *hostedZone.Id)
+		logger.Info(ctx, "created new hosted zone for cluster")
 	} else if err != nil {
 		return microerror.Mask(err)
 	} else {
-		logger.Info("found existing hosted zone for cluster", "hostedZoneID", *hostedZone.Id)
+		logger = logger.With("hostedZoneID", *hostedZone.Id)
+		logger.Info(ctx, "found existing hosted zone for cluster")
 	}
-	logger = logger.WithValues("hostedZoneID", *hostedZone.Id)
 
 	expectedComment := fmt.Sprintf("management_cluster: %s", s.scope.ManagementCluster())
 	if hostedZone.Config == nil || hostedZone.Config.Comment == nil || *hostedZone.Config.Comment != expectedComment {
@@ -98,23 +99,23 @@ func (s *Service) ReconcileRoute53(ctx context.Context) error {
 		}
 	}
 
-	logger.Info("creating or updating hosted zone NS records")
+	logger.Info(ctx, "creating or updating hosted zone NS records")
 	if err := s.changeClusterNSDelegation(ctx, *hostedZone.Id, actionUpsert); err != nil {
 		return microerror.Mask(err)
 	}
-	logger.Info("ensured hosted zone NS records")
+	logger.Info(ctx, "ensured hosted zone NS records")
 
-	logger.Info("creating or updating cluster DNS records")
+	logger.Info(ctx, "creating or updating cluster DNS records")
 	if err := s.upsertClusterRecords(ctx, *hostedZone.Id); err != nil {
 		return microerror.Mask(err)
 	}
-	logger.Info("ensured cluster DNS records")
+	logger.Info(ctx, "ensured cluster DNS records")
 
-	logger.Info("creating or updating ingress records")
+	logger.Info(ctx, "creating or updating ingress records")
 	if err := s.upsertClusterIngressRecords(ctx, *hostedZone.Id); err != nil {
 		return microerror.Mask(err)
 	}
-	logger.Info("ensured ingress records")
+	logger.Info(ctx, "ensured ingress records")
 
 	return nil
 }
@@ -148,7 +149,7 @@ func (s *Service) upsertClusterIngressRecords(ctx context.Context, hostedZoneID 
 	if err != nil {
 		return microerror.Mask(err)
 	} else if ingressIP == "" {
-		s.scope.Info("ingress controller service not found in cluster, not creating ingress DNS record")
+		s.scope.Info(ctx, "ingress controller service not found in cluster, not creating ingress DNS record")
 		return nil
 	}
 
@@ -224,17 +225,17 @@ func (s *Service) upsertClusterRecords(ctx context.Context, hostedZoneID string)
 	}
 
 	if s.scope.APIEndpoint() == "" {
-		s.scope.Info("API endpoint IP is missing")
+		s.scope.Info(ctx, "API endpoint IP is missing")
 		return microerror.Mask(aws.ErrMissingEndpoint)
 	}
 
-	s.scope.Info(fmt.Sprintf("found API endpoint IP: %s", s.scope.APIEndpoint()))
+	s.scope.Info(ctx, fmt.Sprintf("found API endpoint IP: %s", s.scope.APIEndpoint()))
 	input.ChangeBatch.Changes = append(input.ChangeBatch.Changes,
 		s.buildARecordChange("api", s.scope.APIEndpoint(), actionUpsert),
 	)
 
 	if s.scope.BastionIP() != "" {
-		s.scope.Info(fmt.Sprintf("found bastion IP: %s", s.scope.BastionIP()))
+		s.scope.Info(ctx, fmt.Sprintf("found bastion IP: %s", s.scope.BastionIP()))
 		input.ChangeBatch.Changes = append(input.ChangeBatch.Changes,
 			s.buildARecordChange("bastion1", s.scope.BastionIP(), actionUpsert),
 		)

@@ -18,7 +18,7 @@ package cluster
 
 import (
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/go-logr/logr"
+	"github.com/giantswarm/micrologger"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -26,7 +26,7 @@ import (
 type Reconciler struct {
 	awsSession *session.Session
 	client     client.Client
-	logger     logr.Logger
+	logger     micrologger.Logger
 
 	baseDomain        string
 	managementCluster string
@@ -35,7 +35,7 @@ type Reconciler struct {
 type Config struct {
 	AWSSession *session.Session
 	Client     client.Client
-	Logger     logr.Logger
+	Logger     micrologger.Logger
 
 	BaseDomain        string
 	ManagementCluster string

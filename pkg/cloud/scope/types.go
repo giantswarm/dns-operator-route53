@@ -2,7 +2,7 @@ package scope
 
 import (
 	awsclient "github.com/aws/aws-sdk-go/aws/client"
-	"github.com/go-logr/logr"
+	"github.com/giantswarm/micrologger"
 	capo "sigs.k8s.io/cluster-api-provider-openstack/api/v1alpha4"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -11,7 +11,7 @@ import (
 type ClusterScopeParams struct {
 	AWSSession       awsclient.ConfigProvider
 	ManagementClient client.Client
-	Logger           logr.Logger
+	Logger           micrologger.Logger
 
 	BaseDomain            string
 	InfrastructureCluster *capo.OpenStackCluster
@@ -22,7 +22,7 @@ type ClusterScopeParams struct {
 type ClusterScope struct {
 	awsSession       awsclient.ConfigProvider
 	managementClient client.Client
-	logr.Logger
+	micrologger.Logger
 
 	baseDomain        string
 	infraCluster      *capo.OpenStackCluster

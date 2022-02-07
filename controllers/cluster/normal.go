@@ -15,30 +15,30 @@ import (
 )
 
 func (r *Reconciler) reconcileNormal(ctx context.Context, clusterScope cloud.ClusterScoper) (reconcile.Result, error) {
-	clusterScope.Info("reconciling normal")
+	clusterScope.Info(ctx, "reconciling normal")
 
 	// If the openstackCluster doesn't have the finalizer, add it.
 	openstackCluster := clusterScope.InfrastructureCluster()
 	if !controllerutil.ContainsFinalizer(openstackCluster, key.DNSFinalizerName) {
-		clusterScope.Info("adding finalizer")
+		clusterScope.Info(ctx, "adding finalizer")
 		controllerutil.AddFinalizer(openstackCluster, key.DNSFinalizerName)
 		// Register the finalizer immediately to avoid orphaning openstack resources on delete
 		if err := r.client.Update(ctx, openstackCluster); err != nil {
 			return reconcile.Result{}, microerror.Mask(err)
 		}
-		clusterScope.Info("added finalizer")
+		clusterScope.Info(ctx, "added finalizer")
 	}
 
 	route53Service := route53.NewService(clusterScope)
 	err := route53Service.ReconcileRoute53(ctx)
 	if route53.IsIngressNotReady(err) {
-		clusterScope.Info("ingress is not ready yet")
+		clusterScope.Info(ctx, "ingress is not ready yet")
 		return reconcile.Result{Requeue: true}, nil
 	} else if err != nil {
 		return reconcile.Result{}, microerror.Mask(err)
 	}
 
-	clusterScope.Info("reconciled normal")
+	clusterScope.Info(ctx, "reconciled normal")
 
 	return ctrl.Result{
 		Requeue:      true,

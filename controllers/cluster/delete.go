@@ -14,7 +14,7 @@ import (
 )
 
 func (r *Reconciler) reconcileDelete(ctx context.Context, clusterScope cloud.ClusterScoper) (reconcile.Result, error) {
-	clusterScope.Info("reconciling delete")
+	clusterScope.Info(ctx, "reconciling delete")
 
 	route53Service := route53.NewService(clusterScope)
 
@@ -24,15 +24,15 @@ func (r *Reconciler) reconcileDelete(ctx context.Context, clusterScope cloud.Clu
 
 	openstackCluster := clusterScope.InfrastructureCluster()
 	if controllerutil.ContainsFinalizer(openstackCluster, key.DNSFinalizerName) {
-		clusterScope.Info("removing finalizer")
+		clusterScope.Info(ctx, "removing finalizer")
 		controllerutil.RemoveFinalizer(openstackCluster, key.DNSFinalizerName)
 		if err := r.client.Update(ctx, openstackCluster); err != nil {
 			return reconcile.Result{}, microerror.Mask(err)
 		}
-		clusterScope.Info("removed finalizer")
+		clusterScope.Info(ctx, "removed finalizer")
 	}
 
-	clusterScope.Info("reconciled delete")
+	clusterScope.Info(ctx, "reconciled delete")
 
 	return ctrl.Result{}, nil
 }

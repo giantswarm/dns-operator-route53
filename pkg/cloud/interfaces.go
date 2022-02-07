@@ -4,7 +4,7 @@ import (
 	"context"
 
 	awsclient "github.com/aws/aws-sdk-go/aws/client"
-	"github.com/go-logr/logr"
+	"github.com/giantswarm/micrologger"
 	capo "sigs.k8s.io/cluster-api-provider-openstack/api/v1alpha4"
 	"sigs.k8s.io/cluster-api/util/conditions"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -22,7 +22,7 @@ type ClusterObject interface {
 
 // ClusterScoper is the interface for a cluster scope
 type ClusterScoper interface {
-	logr.Logger
+	micrologger.Logger
 	Session
 
 	// APIEndpoint returns the OpenStack LoadBalancer API endpoint for the cluster.

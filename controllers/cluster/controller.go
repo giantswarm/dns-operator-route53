@@ -52,7 +52,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 // +kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=openstackclusters/status,verbs=get;update;patch
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := r.logger.WithValues("OpenStackCluster", req.NamespacedName)
+	log := r.logger.With("OpenStackCluster", req.NamespacedName)
 
 	var infraCluster capo.OpenStackCluster
 	err := r.client.Get(ctx, req.NamespacedName, &infraCluster)
@@ -69,20 +69,20 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return reconcile.Result{}, microerror.Mask(err)
 	}
 	if coreCluster == nil {
-		log.Info("Cluster Controller has not yet set OwnerRef")
+		log.Info(ctx, "Cluster Controller has not yet set OwnerRef")
 		return reconcile.Result{
 			Requeue: true,
 		}, nil
 	}
 
-	log = log.WithValues("Cluster", types.NamespacedName{
+	log = log.With("Cluster", types.NamespacedName{
 		Namespace: coreCluster.Namespace,
 		Name:      coreCluster.Name,
 	})
 
 	// Return early if the core or infrastructure cluster is paused.
 	if annotations.IsPaused(coreCluster, &infraCluster) {
-		log.Info("infrastructure or core cluster is marked as paused. Won't reconcile")
+		log.Info(ctx, "infrastructure or core cluster is marked as paused. Won't reconcile")
 		return ctrl.Result{}, nil
 	}
 
@@ -106,7 +106,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	if !infraCluster.Status.Ready {
-		log.Info("cluster not ready yet")
+		log.Info(ctx, "cluster not ready yet")
 		return ctrl.Result{}, nil
 	}
 

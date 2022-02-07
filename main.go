@@ -24,6 +24,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
+	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -33,7 +34,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/giantswarm/dns-operator-openstack/controllers/cluster"
-	"github.com/giantswarm/dns-operator-openstack/pkg/log"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -87,10 +87,7 @@ func mainE() error {
 	}
 
 	{
-		logrLogger := log.Logger{
-			Logger:    microLogger,
-			Verbosity: verbosity,
-		}
+		logrLogger := logr.New(microLogger.AsSink(verbosity))
 		ctrl.SetLogger(logrLogger)
 		klog.SetLogger(logrLogger)
 	}
@@ -120,7 +117,7 @@ func mainE() error {
 	clusterReconciler, err := cluster.New(cluster.Config{
 		AWSSession: awsSession,
 		Client:     mgr.GetClient(),
-		Logger:     ctrl.Log.WithName("controllers").WithName(cluster.ControllerName),
+		Logger:     microLogger.With("controller", cluster.ControllerName),
 
 		BaseDomain:        baseDomain,
 		ManagementCluster: managementCluster,
