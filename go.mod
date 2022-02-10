@@ -7,7 +7,7 @@ require (
 	github.com/giantswarm/k8sclient/v6 v6.1.0
 	github.com/giantswarm/microerror v0.4.0
 	github.com/giantswarm/micrologger v0.6.0
-	github.com/go-logr/logr v0.4.0
+	github.com/go-logr/logr v1.2.2
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.12.0
 	k8s.io/api v0.22.2
