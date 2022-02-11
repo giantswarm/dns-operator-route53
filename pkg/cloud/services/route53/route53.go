@@ -307,20 +307,21 @@ func (s *Service) describeClusterHostedZone(ctx context.Context) (string, error)
 }
 
 func (s *Service) getIngressIP(ctx context.Context) (string, error) {
-	serviceName := fmt.Sprintf("%s%s", IngressAppPrefix, s.scope.Name())
-
-	o := client.ObjectKey{
-		Name:      serviceName,
-		Namespace: IngressAppNamespace,
-	}
 
 	k8sClient, err := s.scope.ClusterK8sClient(ctx)
 	if err != nil {
 		return "", microerror.Mask(err)
 	}
 
-	var icService corev1.Service
-	err = k8sClient.Get(ctx, o, &icService)
+	icServices := &corev1.ServiceList{}
+
+	listOpts := []client.ListOption{
+		client.InNamespace(IngressAppNamespace),
+		client.MatchingLabels{"app": "nginx-ingress-controller"},
+		client.MatchingFields{"spec.type": "LoadBalancer"},
+	}
+
+	err = k8sClient.List(ctx, icServices, listOpts...)
 	// Ingress service is not installed in this cluster.
 	if apierrors.IsNotFound(err) {
 		return "", nil
@@ -328,11 +329,23 @@ func (s *Service) getIngressIP(ctx context.Context) (string, error) {
 		return "", microerror.Mask(err)
 	}
 
-	if len(icService.Status.LoadBalancer.Ingress) < 1 || icService.Status.LoadBalancer.Ingress[0].IP == "" {
-		return "", microerror.Mask(ingressNotReadyError)
-	}
+	switch len(icServices.Items) {
+	case 0:
+		// Ingress service is not installed in this cluster.
+		return "", nil
 
-	return icService.Status.LoadBalancer.Ingress[0].IP, nil
+	case 1:
+		icService := icServices.Items[0]
+
+		if len(icService.Status.LoadBalancer.Ingress) < 1 || icService.Status.LoadBalancer.Ingress[0].IP == "" {
+			return "", microerror.Mask(ingressNotReadyError)
+		}
+
+		return icService.Status.LoadBalancer.Ingress[0].IP, nil
+
+	default:
+		return "", microerror.Mask(tooManyIcServicesError)
+	}
 }
 
 func (s *Service) listClusterNSRecords(ctx context.Context, hostedZoneID string) ([]*route53.ResourceRecord, error) {
