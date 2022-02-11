@@ -10,12 +10,12 @@ import (
 	"github.com/aws/aws-sdk-go/service/route53"
 	"github.com/giantswarm/microerror"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	IngressAppPrefix    = "nginx-ingress-controller-app-"
+	IngressAppLabel     = "nginx-ingress-controller"
 	IngressAppNamespace = "kube-system"
 	TTL                 = 300
 
@@ -313,39 +313,30 @@ func (s *Service) getIngressIP(ctx context.Context) (string, error) {
 		return "", microerror.Mask(err)
 	}
 
-	icServices := &corev1.ServiceList{}
-
 	listOpts := []client.ListOption{
 		client.InNamespace(IngressAppNamespace),
-		client.MatchingLabels{"app": "nginx-ingress-controller"},
-		client.MatchingFields{"spec.type": "LoadBalancer"},
+		client.MatchingLabels{"app": IngressAppLabel},
 	}
 
+	icServices := &corev1.ServiceList{}
+
 	err = k8sClient.List(ctx, icServices, listOpts...)
-	// Ingress service is not installed in this cluster.
-	if apierrors.IsNotFound(err) {
-		return "", nil
-	} else if err != nil {
+	if err != nil {
 		return "", microerror.Mask(err)
 	}
 
-	switch len(icServices.Items) {
-	case 0:
-		// Ingress service is not installed in this cluster.
-		return "", nil
+	for _, icService := range icServices.Items {
+		if icService.Spec.Type == v1.ServiceTypeLoadBalancer {
+			if len(icService.Status.LoadBalancer.Ingress) < 1 || icService.Status.LoadBalancer.Ingress[0].IP == "" {
+				return "", microerror.Mask(ingressNotReadyError)
+			}
 
-	case 1:
-		icService := icServices.Items[0]
-
-		if len(icService.Status.LoadBalancer.Ingress) < 1 || icService.Status.LoadBalancer.Ingress[0].IP == "" {
-			return "", microerror.Mask(ingressNotReadyError)
+			return icService.Status.LoadBalancer.Ingress[0].IP, nil
 		}
-
-		return icService.Status.LoadBalancer.Ingress[0].IP, nil
-
-	default:
-		return "", microerror.Mask(tooManyIcServicesError)
 	}
+
+	// Ingress service is not installed in this cluster.
+	return "", nil
 }
 
 func (s *Service) listClusterNSRecords(ctx context.Context, hostedZoneID string) ([]*route53.ResourceRecord, error) {
