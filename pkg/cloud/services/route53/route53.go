@@ -15,6 +15,8 @@ import (
 )
 
 const (
+	AppNameLabelKey = "app.kubernetes.io/name"
+
 	IngressAppLabel     = "nginx-ingress-controller"
 	IngressAppNamespace = "kube-system"
 	TTL                 = 300
@@ -315,7 +317,7 @@ func (s *Service) getIngressIP(ctx context.Context) (string, error) {
 
 	listOpts := []client.ListOption{
 		client.InNamespace(IngressAppNamespace),
-		client.MatchingLabels{"app": IngressAppLabel},
+		client.MatchingLabels{AppNameLabelKey: IngressAppLabel},
 	}
 
 	icServices := &corev1.ServiceList{}
