@@ -10,14 +10,15 @@ import (
 	"github.com/aws/aws-sdk-go/service/route53"
 	"github.com/giantswarm/microerror"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	IngressAppPrefix    = "nginx-ingress-controller-app-"
-	IngressAppNamespace = "kube-system"
-	TTL                 = 300
+	appNameLabelKey = "app.kubernetes.io/name"
+
+	ingressAppLabel     = "nginx-ingress-controller"
+	ingressAppNamespace = "kube-system"
+	ttl                 = 300
 
 	actionDelete = "DELETE"
 	actionUpsert = "UPSERT"
@@ -89,7 +90,7 @@ func (s *Service) buildARecordChange(hostedZoneID, recordName, recordValue, acti
 		ResourceRecordSet: &route53.ResourceRecordSet{
 			Name: aws.String(fmt.Sprintf("%s.%s", recordName, s.scope.ClusterDomain())),
 			Type: aws.String("A"),
-			TTL:  aws.Int64(TTL),
+			TTL:  aws.Int64(ttl),
 			ResourceRecords: []*route53.ResourceRecord{
 				{
 					Value: aws.String(recordValue),
@@ -104,6 +105,7 @@ func (s *Service) changeClusterIngressRecords(ctx context.Context, hostedZoneID,
 	if err != nil {
 		return microerror.Mask(err)
 	} else if ingressIP == "" {
+		// Ingress service is not installed in this cluster.
 		return nil
 	}
 
@@ -155,7 +157,7 @@ func (s *Service) changeClusterNSDelegation(ctx context.Context, hostedZoneID, a
 					ResourceRecordSet: &route53.ResourceRecordSet{
 						Name:            aws.String(s.scope.ClusterDomain()),
 						Type:            aws.String("NS"),
-						TTL:             aws.Int64(TTL),
+						TTL:             aws.Int64(ttl),
 						ResourceRecords: records,
 					},
 				},
@@ -307,32 +309,40 @@ func (s *Service) describeClusterHostedZone(ctx context.Context) (string, error)
 }
 
 func (s *Service) getIngressIP(ctx context.Context) (string, error) {
-	serviceName := fmt.Sprintf("%s%s", IngressAppPrefix, s.scope.Name())
-
-	o := client.ObjectKey{
-		Name:      serviceName,
-		Namespace: IngressAppNamespace,
-	}
 
 	k8sClient, err := s.scope.ClusterK8sClient(ctx)
 	if err != nil {
 		return "", microerror.Mask(err)
 	}
 
-	var icService corev1.Service
-	err = k8sClient.Get(ctx, o, &icService)
-	// Ingress service is not installed in this cluster.
-	if apierrors.IsNotFound(err) {
-		return "", nil
-	} else if err != nil {
+	var icServices corev1.ServiceList
+
+	err = k8sClient.List(ctx, &icServices,
+		client.InNamespace(ingressAppNamespace),
+		client.MatchingLabels{appNameLabelKey: ingressAppLabel},
+	)
+
+	if err != nil {
 		return "", microerror.Mask(err)
 	}
 
-	if len(icService.Status.LoadBalancer.Ingress) < 1 || icService.Status.LoadBalancer.Ingress[0].IP == "" {
-		return "", microerror.Mask(ingressNotReadyError)
+	var icServiceIP string
+
+	for _, icService := range icServices.Items {
+		if icService.Spec.Type == corev1.ServiceTypeLoadBalancer {
+			if icServiceIP != "" {
+				return "", microerror.Mask(tooManyICServicesError)
+			}
+
+			if len(icService.Status.LoadBalancer.Ingress) < 1 || icService.Status.LoadBalancer.Ingress[0].IP == "" {
+				return "", microerror.Mask(ingressNotReadyError)
+			}
+
+			icServiceIP = icService.Status.LoadBalancer.Ingress[0].IP
+		}
 	}
 
-	return icService.Status.LoadBalancer.Ingress[0].IP, nil
+	return icServiceIP, nil
 }
 
 func (s *Service) listClusterNSRecords(ctx context.Context, hostedZoneID string) ([]*route53.ResourceRecord, error) {

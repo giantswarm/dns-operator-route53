@@ -37,6 +37,15 @@ func IsIngressNotReady(err error) bool {
 	return microerror.Cause(err) == ingressNotReadyError
 }
 
+var tooManyICServicesError = &microerror.Error{
+	Kind: "tooManyICServicesError",
+}
+
+// IsTooManyICServices asserts tooManyICServicesError.
+func IsTooManyICServices(err error) bool {
+	return microerror.Cause(err) == tooManyICServicesError
+}
+
 func wrapRoute53Error(err error) error {
 	// if err == aws.ErrMissingEndpoint {
 	// 	return microerror.Mask(notFoundError)
