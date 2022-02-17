@@ -105,6 +105,7 @@ func (s *Service) changeClusterIngressRecords(ctx context.Context, hostedZoneID,
 	if err != nil {
 		return microerror.Mask(err)
 	} else if ingressIP == "" {
+		// Ingress service is not installed in this cluster.
 		return nil
 	}
 
@@ -325,18 +326,23 @@ func (s *Service) getIngressIP(ctx context.Context) (string, error) {
 		return "", microerror.Mask(err)
 	}
 
+	var icServiceIP string
+
 	for _, icService := range icServices.Items {
 		if icService.Spec.Type == corev1.ServiceTypeLoadBalancer {
+			if icServiceIP != "" {
+				return "", microerror.Mask(tooManyICServicesError)
+			}
+
 			if len(icService.Status.LoadBalancer.Ingress) < 1 || icService.Status.LoadBalancer.Ingress[0].IP == "" {
 				return "", microerror.Mask(ingressNotReadyError)
 			}
 
-			return icService.Status.LoadBalancer.Ingress[0].IP, nil
+			icServiceIP = icService.Status.LoadBalancer.Ingress[0].IP
 		}
 	}
 
-	// Ingress service is not installed in this cluster.
-	return "", nil
+	return icServiceIP, nil
 }
 
 func (s *Service) listClusterNSRecords(ctx context.Context, hostedZoneID string) ([]*route53.ResourceRecord, error) {
