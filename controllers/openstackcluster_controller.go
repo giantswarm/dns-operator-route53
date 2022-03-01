@@ -120,16 +120,13 @@ func (r *OpenstackClusterReconciler) reconcileNormal(ctx context.Context, cluste
 	err := route53Service.ReconcileRoute53(ctx)
 	if route53.IsIngressNotReady(err) {
 		clusterScope.Error(err, "ingress is not ready yet, requeuing")
-		return reconcile.Result{Requeue: true}, microerror.Mask(err)
+		return reconcile.Result{}, microerror.Mask(err)
 	} else if err != nil {
 		clusterScope.Error(err, "error creating route53")
 		return reconcile.Result{}, microerror.Mask(err)
 	}
 
-	return ctrl.Result{
-		Requeue:      true,
-		RequeueAfter: time.Minute * 5,
-	}, nil
+	return ctrl.Result{RequeueAfter: time.Minute}, nil
 }
 
 func (r *OpenstackClusterReconciler) reconcileDelete(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
