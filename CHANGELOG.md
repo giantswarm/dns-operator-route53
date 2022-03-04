@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.1] - 2022-03-04
 
+### Fixed
+
+- Reduce normal reconciliation requeue time to 1 minute for faster change detection.
+
 ## [0.4.0] - 2022-02-22
 
 ### Changed
