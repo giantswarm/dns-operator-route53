@@ -10,6 +10,7 @@ require (
 	github.com/go-logr/logr v0.4.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.12.0
+	golang.org/x/text v0.3.6
 	k8s.io/api v0.22.2
 	k8s.io/apimachinery v0.22.2
 	k8s.io/client-go v0.22.2
@@ -27,5 +28,17 @@ replace (
 	github.com/gogo/protobuf v1.3.1 => github.com/gogo/protobuf v1.3.2
 	github.com/gorilla/websocket v1.4.0 => github.com/gorilla/websocket v1.4.2
 	sigs.k8s.io/cluster-api => sigs.k8s.io/cluster-api v1.0.1-0.20211028151834-d72fd59c8483
+)
 
+// fixes some CVEs
+replace (
+	github.com/Microsoft/hcsshim v0.8.7 => github.com/Microsoft/hcsshim v0.9.2
+	github.com/containerd/imgcrypt v1.1.1 => github.com/containerd/imgcrypt v1.1.5
+	github.com/nats-io/jwt v0.3.0 => github.com/nats-io/jwt/v2 v2.3.0
+	github.com/nats-io/jwt v0.3.2 => github.com/nats-io/jwt/v2 v2.3.0
+	github.com/nats-io/nats-server/v2 v2.1.2 => github.com/nats-io/nats-server/v2 v2.8.4
+	github.com/opencontainers/image-spec v1.0.1 => github.com/opencontainers/image-spec v1.0.2
+	github.com/opencontainers/runc v1.0.2 => github.com/opencontainers/runc v1.1.2
+	github.com/pkg/sftp v1.10.1 => github.com/pkg/sftp v1.13.4
+	golang.org/x/text v0.3.6 => golang.org/x/text v0.3.7
 )
