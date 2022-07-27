@@ -11,6 +11,7 @@ import (
 	"github.com/giantswarm/microerror"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -25,7 +26,9 @@ const (
 )
 
 func (s *Service) DeleteRoute53(ctx context.Context) error {
-	s.scope.V(2).Info("Deleting hosted DNS zone")
+	log := log.FromContext(ctx)
+	log.V(2).Info("Deleting hosted DNS zone")
+
 	hostedZoneID, err := s.describeClusterHostedZone(ctx)
 	if IsHostedZoneNotFound(err) {
 		return nil
@@ -50,12 +53,13 @@ func (s *Service) DeleteRoute53(ctx context.Context) error {
 	if err != nil {
 		return microerror.Mask(err)
 	}
-	s.scope.V(2).Info(fmt.Sprintf("Deleting hosted zone completed successfully for cluster %s", s.scope.Name()))
+	log.V(2).Info(fmt.Sprintf("Deleting hosted zone completed successfully for cluster %s", s.scope.Name()))
 	return nil
 }
 
 func (s *Service) ReconcileRoute53(ctx context.Context) error {
-	s.scope.V(2).Info("Reconciling hosted DNS zone")
+	log := log.FromContext(ctx)
+	log.V(2).Info("Reconciling hosted DNS zone")
 
 	// Describe or create.
 	hostedZoneID, err := s.describeClusterHostedZone(ctx)
@@ -64,7 +68,7 @@ func (s *Service) ReconcileRoute53(ctx context.Context) error {
 		if err != nil {
 			return microerror.Mask(err)
 		}
-		s.scope.Info(fmt.Sprintf("Created new hosted zone for cluster %s", s.scope.Name()))
+		log.Info(fmt.Sprintf("Created new hosted zone for cluster %s", s.scope.Name()))
 	} else if err != nil {
 		return microerror.Mask(err)
 	}
@@ -173,6 +177,7 @@ func (s *Service) changeClusterNSDelegation(ctx context.Context, hostedZoneID, a
 }
 
 func (s *Service) changeClusterRecords(ctx context.Context, hostedZoneID string, action string) error {
+	log := log.FromContext(ctx)
 	input := &route53.ChangeResourceRecordSetsInput{
 		HostedZoneId: aws.String(hostedZoneID),
 		ChangeBatch: &route53.ChangeBatch{
@@ -181,18 +186,18 @@ func (s *Service) changeClusterRecords(ctx context.Context, hostedZoneID string,
 	}
 
 	if s.scope.APIEndpoint() == "" {
-		s.scope.Info("API endpoint is not ready yet.")
+		log.Info("API endpoint is not ready yet.")
 		return aws.ErrMissingEndpoint
 	}
 
-	s.scope.Info(s.scope.APIEndpoint())
+	log.Info(s.scope.APIEndpoint())
 
 	input.ChangeBatch.Changes = append(input.ChangeBatch.Changes,
 		s.buildARecordChange(hostedZoneID, "api", s.scope.APIEndpoint(), actionUpsert),
 	)
 
 	if s.scope.BastionIP() != "" {
-		s.scope.Info(s.scope.BastionIP())
+		log.Info(s.scope.BastionIP())
 
 		input.ChangeBatch.Changes = append(input.ChangeBatch.Changes,
 			s.buildARecordChange(hostedZoneID, "bastion1", s.scope.BastionIP(), actionUpsert),
@@ -268,12 +273,13 @@ func (s *Service) deleteClusterRecords(ctx context.Context, hostedZoneID string)
 }
 
 func (s *Service) describeBaseHostedZone(ctx context.Context) (string, error) {
+	log := log.FromContext(ctx)
 	input := &route53.ListHostedZonesByNameInput{
 		DNSName: aws.String(s.scope.BaseDomain()),
 	}
 	out, err := s.Route53Client.ListHostedZonesByNameWithContext(ctx, input)
 	if err != nil {
-		s.scope.Info(err.Error())
+		log.Info(err.Error())
 		return "", wrapRoute53Error(err)
 	}
 	if len(out.HostedZones) == 0 {
