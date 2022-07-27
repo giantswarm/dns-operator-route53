@@ -25,21 +25,20 @@ import (
 	"github.com/giantswarm/dns-operator-openstack/pkg/key"
 
 	"github.com/giantswarm/microerror"
-	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	capo "sigs.k8s.io/cluster-api-provider-openstack/api/v1alpha4"
+	capo "sigs.k8s.io/cluster-api-provider-openstack/api/v1alpha5"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 // OpenstackClusterReconciler reconciles a openstackCluster object
 type OpenstackClusterReconciler struct {
 	client.Client
-	Log logr.Logger
 
 	BaseDomain        string
 	ManagementCluster string
@@ -49,7 +48,8 @@ type OpenstackClusterReconciler struct {
 // +kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=openstackclusters/status,verbs=get;update;patch
 
 func (r *OpenstackClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := r.Log.WithValues("openstackcluster", req.NamespacedName)
+	log := log.FromContext(ctx)
+	log.WithValues("openstackcluster", req.NamespacedName)
 
 	var infraCluster capo.OpenStackCluster
 	err := r.Get(ctx, req.NamespacedName, &infraCluster)
@@ -80,7 +80,7 @@ func (r *OpenstackClusterReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 	// Create the cluster scope.
 	clusterScope, err := scope.NewClusterScope(ctx, scope.ClusterScopeParams{
-		Logger: log,
+		//Logger: log,
 
 		BaseDomain:            r.BaseDomain,
 		InfrastructureCluster: &infraCluster,
@@ -106,7 +106,8 @@ func (r *OpenstackClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *OpenstackClusterReconciler) reconcileNormal(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
-	clusterScope.Info("Reconciling openstackCluster normal")
+	log := log.FromContext(ctx)
+	log.Info("Reconciling openstackCluster normal")
 
 	openstackCluster := clusterScope.InfrastructureCluster()
 	// If the openstackCluster doesn't have the finalizer, add it.
@@ -119,10 +120,10 @@ func (r *OpenstackClusterReconciler) reconcileNormal(ctx context.Context, cluste
 	route53Service := route53.NewService(clusterScope)
 	err := route53Service.ReconcileRoute53(ctx)
 	if route53.IsIngressNotReady(err) {
-		clusterScope.Error(err, "ingress is not ready yet, requeuing")
+		log.Error(err, "ingress is not ready yet, requeuing")
 		return reconcile.Result{}, microerror.Mask(err)
 	} else if err != nil {
-		clusterScope.Error(err, "error creating route53")
+		log.Error(err, "error creating route53")
 		return reconcile.Result{}, microerror.Mask(err)
 	}
 
@@ -130,12 +131,13 @@ func (r *OpenstackClusterReconciler) reconcileNormal(ctx context.Context, cluste
 }
 
 func (r *OpenstackClusterReconciler) reconcileDelete(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
-	clusterScope.Info("Reconciling openstackCluster delete")
+	log := log.FromContext(ctx)
+	log.Info("Reconciling openstackCluster delete")
 
 	route53Service := route53.NewService(clusterScope)
 
 	if err := route53Service.DeleteRoute53(ctx); err != nil {
-		clusterScope.Error(err, "error deleting route53")
+		log.Error(err, "error deleting route53")
 		return reconcile.Result{}, microerror.Mask(err)
 	}
 

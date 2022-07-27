@@ -10,11 +10,9 @@ import (
 	"github.com/giantswarm/k8sclient/v6/pkg/k8srestconfig"
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
-	"k8s.io/klog/klogr"
-	capo "sigs.k8s.io/cluster-api-provider-openstack/api/v1alpha4"
+	capo "sigs.k8s.io/cluster-api-provider-openstack/api/v1alpha5"
 	capi "sigs.k8s.io/cluster-api/api/v1alpha4"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -27,8 +25,6 @@ const (
 
 // ClusterScopeParams defines the input parameters used to create a new Scope.
 type ClusterScopeParams struct {
-	Logger logr.Logger
-
 	BaseDomain            string
 	InfrastructureCluster *capo.OpenStackCluster
 	ManagementCluster     string
@@ -37,9 +33,6 @@ type ClusterScopeParams struct {
 // NewClusterScope creates a new Scope from the supplied parameters.
 // This is meant to be called for each reconcile iteration.
 func NewClusterScope(ctx context.Context, params ClusterScopeParams) (*ClusterScope, error) {
-	if params.Logger == nil {
-		params.Logger = klogr.New()
-	}
 
 	if params.BaseDomain == "" {
 		return nil, microerror.Maskf(invalidConfigError, "failed to generate new scope from empty BaseDomain")
@@ -54,8 +47,6 @@ func NewClusterScope(ctx context.Context, params ClusterScopeParams) (*ClusterSc
 	}
 
 	return &ClusterScope{
-		Logger: params.Logger,
-
 		session: awsSession,
 
 		baseDomain:        params.BaseDomain,
@@ -66,8 +57,6 @@ func NewClusterScope(ctx context.Context, params ClusterScopeParams) (*ClusterSc
 
 // ClusterScope defines the basic context for an actuator to operate upon.
 type ClusterScope struct {
-	logr.Logger
-
 	k8sClient client.Client
 	session   awsclient.ConfigProvider
 
