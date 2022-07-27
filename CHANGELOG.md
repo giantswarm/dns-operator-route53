@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `dns-operator-openstack` is now build with `go 1.18`
+- change `cluster-api-provider-openstack` packages from `v1alpha4` up to `v1alpha5` 
 - Reduce requeue time from five minutes to one minute to react faster to nginx IC being installed.
 
 ## [Unreleased]

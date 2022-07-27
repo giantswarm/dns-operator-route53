@@ -80,8 +80,6 @@ func (r *OpenstackClusterReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 	// Create the cluster scope.
 	clusterScope, err := scope.NewClusterScope(ctx, scope.ClusterScopeParams{
-		//Logger: log,
-
 		BaseDomain:            r.BaseDomain,
 		InfrastructureCluster: &infraCluster,
 		ManagementCluster:     r.ManagementCluster,

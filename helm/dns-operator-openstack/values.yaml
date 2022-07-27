@@ -9,7 +9,7 @@ image:
   name: "giantswarm/dns-operator-openstack"
   tag: "[[ .Version ]]"
 registry:
-  domain: quay.io
+  domain: docker.io
 
 pod:
   user:
