@@ -47,10 +47,6 @@ func IsTooManyICServices(err error) bool {
 }
 
 func wrapRoute53Error(err error) error {
-	// if err == aws.ErrMissingEndpoint {
-	// 	return microerror.Mask(notFoundError)
-	// }
-
 	if code, ok := awserrors.Code(errors.Cause(err)); ok {
 		switch code {
 		case route53.ErrCodeHostedZoneNotFound:

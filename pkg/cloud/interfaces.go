@@ -4,7 +4,8 @@ import (
 	"context"
 
 	awsclient "github.com/aws/aws-sdk-go/aws/client"
-	capo "sigs.k8s.io/cluster-api-provider-openstack/api/v1alpha5"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	capi "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util/conditions"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -30,12 +31,14 @@ type ClusterScoper interface {
 	BaseDomain() string
 	// BastionIP returns the bastion IP.
 	BastionIP() string
+	// Cluster returns the CAPI cluster.
+	Cluster() *capi.Cluster
 	// ClusterK8sClient returns a client to interact with the cluster.
 	ClusterK8sClient(ctx context.Context) (client.Client, error)
 	// ClusterDomain returns the cluster domain.
 	ClusterDomain() string
-	// InfrastructureCluster returns the infrastructure cluster object.
-	InfrastructureCluster() *capo.OpenStackCluster
+	// InfrastructureCluster returns the unstructured InfrastructureCluster
+	InfrastructureCluster() *unstructured.Unstructured
 	// ManagementCluster returns the name of the management cluster.
 	ManagementCluster() string
 	// Name returns the CAPI cluster name.
