@@ -7,11 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+## [Unreleased]
+
+- `dns-operator-openstack` now initially act on ClusterAPI `cluster` object to work with every
+  infrastructure Provider via the `unstructured` client.
+
+  Infrastructure specific information, like ClusterAPI OpenStack bastion IP can be queried via the
+  raw `json path`
+- `A`-Records for `bastion` hosts get cleaned up if no bastion host exists
 - `dns-operator-openstack` is now build with `go 1.18`
 - change `cluster-api-provider-openstack` packages from `v1alpha4` up to `v1alpha5` 
 - Reduce requeue time from five minutes to one minute to react faster to nginx IC being installed.
-
-## [Unreleased]
 
 ## [0.4.1] - 2022-03-04
 

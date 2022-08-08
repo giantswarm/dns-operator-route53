@@ -1,5 +1,6 @@
 package key
 
 const (
-	DNSFinalizerName = "dns-operator-openstack.finalizers.giantswarm.io"
+	DNSFinalizerNameOld = "dns-operator-openstack.finalizers.giantswarm.io"
+	DNSFinalizerNameNew = "dns-operator-route53.finalizers.giantswarm.io"
 )

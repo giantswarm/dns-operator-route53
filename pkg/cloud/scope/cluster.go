@@ -12,9 +12,10 @@ import (
 	"github.com/giantswarm/micrologger"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
-	capo "sigs.k8s.io/cluster-api-provider-openstack/api/v1alpha5"
-	capi "sigs.k8s.io/cluster-api/api/v1alpha4"
+	capi "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 const (
@@ -26,7 +27,8 @@ const (
 // ClusterScopeParams defines the input parameters used to create a new Scope.
 type ClusterScopeParams struct {
 	BaseDomain            string
-	InfrastructureCluster *capo.OpenStackCluster
+	Cluster               *capi.Cluster
+	InfrastructureCluster *unstructured.Unstructured
 	ManagementCluster     string
 }
 
@@ -50,6 +52,7 @@ func NewClusterScope(ctx context.Context, params ClusterScopeParams) (*ClusterSc
 		session: awsSession,
 
 		baseDomain:        params.BaseDomain,
+		cluster:           params.Cluster,
 		infraCluster:      params.InfrastructureCluster,
 		managementCluster: params.ManagementCluster,
 	}, nil
@@ -61,13 +64,14 @@ type ClusterScope struct {
 	session   awsclient.ConfigProvider
 
 	baseDomain        string
-	infraCluster      *capo.OpenStackCluster
+	cluster           *capi.Cluster
+	infraCluster      *unstructured.Unstructured
 	managementCluster string
 }
 
-// APIEndpoint returns the Openstack infrastructure Kubernetes API endpoint.
+// APIEndpoint returns the Cluster Kubernetes API endpoint.
 func (s *ClusterScope) APIEndpoint() string {
-	return s.infraCluster.Spec.ControlPlaneEndpoint.Host
+	return s.cluster.Spec.ControlPlaneEndpoint.Host
 }
 
 // BaseDomain returns the cluster basedomain.
@@ -77,15 +81,25 @@ func (s *ClusterScope) BaseDomain() string {
 
 // BastionIP returns the bastion IP.
 func (s *ClusterScope) BastionIP() string {
-	if s.infraCluster.Status.Bastion != nil {
-		return s.infraCluster.Status.Bastion.FloatingIP
-	}
 
-	return ""
+	// define possible targets
+	openStackBastionIP, openStackBastionIPexists, _ := unstructured.NestedString(s.infraCluster.Object, "status", "bastion", "floatingIP")
+
+	switch {
+	case openStackBastionIPexists:
+		return openStackBastionIP
+	default:
+		return ""
+	}
+}
+
+// Cluster returns the cluster.
+func (s *ClusterScope) Cluster() *capi.Cluster {
+	return s.cluster
 }
 
 // InfrastructureCluster returns the infrastructure cluster.
-func (s *ClusterScope) InfrastructureCluster() *capo.OpenStackCluster {
+func (s *ClusterScope) InfrastructureCluster() *unstructured.Unstructured {
 	return s.infraCluster
 }
 
@@ -114,7 +128,7 @@ func (s *ClusterScope) ClusterDomain() string {
 
 // Name returns the Openstack cluster name.
 func (s *ClusterScope) Name() string {
-	return s.infraCluster.Labels[capi.ClusterLabelName]
+	return s.cluster.Name
 }
 
 // Session returns the AWS SDK session. Used for creating cluster client.
@@ -156,7 +170,7 @@ func (s *ClusterScope) getClusterKubeConfig(ctx context.Context, logger microlog
 
 	o := client.ObjectKey{
 		Name:      fmt.Sprintf("%s%s", s.Name(), KubeConfigSecretSuffix),
-		Namespace: s.infraCluster.Namespace,
+		Namespace: s.cluster.Namespace,
 	}
 
 	if err := k8sClient.Get(ctx, o, &secret); err != nil {

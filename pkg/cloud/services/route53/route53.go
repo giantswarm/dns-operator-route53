@@ -27,7 +27,7 @@ const (
 
 func (s *Service) DeleteRoute53(ctx context.Context) error {
 	log := log.FromContext(ctx)
-	log.V(2).Info("Deleting hosted DNS zone")
+	log.Info("Deleting hosted DNS zone")
 
 	hostedZoneID, err := s.describeClusterHostedZone(ctx)
 	if IsHostedZoneNotFound(err) {
@@ -53,13 +53,13 @@ func (s *Service) DeleteRoute53(ctx context.Context) error {
 	if err != nil {
 		return microerror.Mask(err)
 	}
-	log.V(2).Info(fmt.Sprintf("Deleting hosted zone completed successfully for cluster %s", s.scope.Name()))
+	log.Info(fmt.Sprintf("Deleting hosted zone completed successfully for cluster %s", s.scope.Name()))
 	return nil
 }
 
 func (s *Service) ReconcileRoute53(ctx context.Context) error {
 	log := log.FromContext(ctx)
-	log.V(2).Info("Reconciling hosted DNS zone")
+	log.Info("Reconciling hosted DNS zone")
 
 	// Describe or create.
 	hostedZoneID, err := s.describeClusterHostedZone(ctx)
@@ -185,29 +185,56 @@ func (s *Service) changeClusterRecords(ctx context.Context, hostedZoneID string,
 		},
 	}
 
+	recordSets, err := s.listResourceRecordSets(ctx, hostedZoneID)
+	if err != nil {
+		return wrapRoute53Error(err)
+	}
+
 	if s.scope.APIEndpoint() == "" {
 		log.Info("API endpoint is not ready yet.")
 		return aws.ErrMissingEndpoint
 	}
 
-	log.Info(s.scope.APIEndpoint())
+	log.Info("route53", "Kubernetes API endpoint", s.scope.APIEndpoint())
 
 	input.ChangeBatch.Changes = append(input.ChangeBatch.Changes,
 		s.buildARecordChange(hostedZoneID, "api", s.scope.APIEndpoint(), actionUpsert),
 	)
 
 	if s.scope.BastionIP() != "" {
-		log.Info(s.scope.BastionIP())
+		log.Info("route53", "bastion IP", s.scope.BastionIP())
 
 		input.ChangeBatch.Changes = append(input.ChangeBatch.Changes,
 			s.buildARecordChange(hostedZoneID, "bastion1", s.scope.BastionIP(), actionUpsert),
 		)
 	}
 
+	if s.scope.BastionIP() == "" {
+		for _, recordSet := range recordSets.ResourceRecordSets {
+			if *recordSet.Name == "bastion1"+"."+s.scope.Name()+"."+s.scope.BaseDomain()+"." {
+				log.Info("orphaned bastion record found", "name", *recordSet.Name, "record", *recordSet.ResourceRecords[0].Value)
+				input.ChangeBatch.Changes = append(input.ChangeBatch.Changes,
+					s.buildARecordChange(hostedZoneID, "bastion1", *recordSet.ResourceRecords[0].Value, actionDelete),
+				)
+			}
+		}
+	}
+
 	if _, err := s.Route53Client.ChangeResourceRecordSetsWithContext(ctx, input); err != nil {
 		return wrapRoute53Error(err)
 	}
 	return nil
+}
+
+func (s *Service) listResourceRecordSets(ctx context.Context, hostedZoneID string) (*route53.ListResourceRecordSetsOutput, error) {
+	listParams := &route53.ListResourceRecordSetsInput{
+		HostedZoneId: aws.String(hostedZoneID),
+	}
+	respList, err := s.Route53Client.ListResourceRecordSets(listParams)
+	if err != nil {
+		return &route53.ListResourceRecordSetsOutput{}, wrapRoute53Error(err)
+	}
+	return respList, nil
 }
 
 func (s *Service) createClusterHostedZone(ctx context.Context) (string, error) {

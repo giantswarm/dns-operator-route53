@@ -77,13 +77,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.OpenstackClusterReconciler{
+	if err = (&controllers.ClusterReconciler{
 		Client: mgr.GetClient(),
 
 		BaseDomain:        baseDomain,
 		ManagementCluster: managementCluster,
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "OpenstackCluster")
+		setupLog.Error(err, "unable to create controller", "controller", "Cluster")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
