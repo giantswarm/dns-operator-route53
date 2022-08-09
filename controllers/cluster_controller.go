@@ -110,24 +110,31 @@ func (r *ClusterReconciler) reconcileNormal(ctx context.Context, clusterScope *s
 
 	cluster := clusterScope.Cluster()
 	infraCluster := clusterScope.InfrastructureCluster()
+
 	// If the cluster doesn't have the finalizer, add it.
-	controllerutil.AddFinalizer(cluster, key.DNSFinalizerNameNew)
-	// Register the finalizer immediately to avoid orphaning cluster resources on delete
-	if err := r.Update(ctx, cluster); err != nil {
-		return reconcile.Result{}, microerror.Mask(err)
+	if !controllerutil.ContainsFinalizer(cluster, key.DNSFinalizerNameNew) {
+		controllerutil.AddFinalizer(cluster, key.DNSFinalizerNameNew)
+		// Register the finalizer immediately to avoid orphaning cluster resources on delete
+		if err := r.Update(ctx, cluster); err != nil {
+			return reconcile.Result{}, microerror.Mask(err)
+		}
 	}
 
-	controllerutil.AddFinalizer(infraCluster, key.DNSFinalizerNameNew)
 	// Register the finalizer immediately to avoid orphaning infrastructure cluster resources on delete
-	if err := r.Update(ctx, infraCluster); err != nil {
-		return reconcile.Result{}, microerror.Mask(err)
+	if !controllerutil.ContainsFinalizer(infraCluster, key.DNSFinalizerNameNew) {
+		controllerutil.AddFinalizer(infraCluster, key.DNSFinalizerNameNew)
+		if err := r.Update(ctx, infraCluster); err != nil {
+			return reconcile.Result{}, microerror.Mask(err)
+		}
 	}
 
 	// TODO start: delete after all CAPO based clusters got migrated to new finalizer
 	// remove the old finalizer from infrastructure clusters
-	controllerutil.RemoveFinalizer(infraCluster, key.DNSFinalizerNameOld)
-	if err := r.Update(ctx, infraCluster); err != nil {
-		return reconcile.Result{}, microerror.Mask(err)
+	if controllerutil.ContainsFinalizer(infraCluster, key.DNSFinalizerNameOld) {
+		controllerutil.RemoveFinalizer(infraCluster, key.DNSFinalizerNameOld)
+		if err := r.Update(ctx, infraCluster); err != nil {
+			return reconcile.Result{}, microerror.Mask(err)
+		}
 	}
 	// TODO end
 
@@ -148,6 +155,15 @@ func (r *ClusterReconciler) reconcileDelete(ctx context.Context, clusterScope *s
 	log := log.FromContext(ctx)
 	log.Info("Reconciling openstackCluster delete")
 
+	cluster := clusterScope.Cluster()
+	infraCluster := clusterScope.InfrastructureCluster()
+
+	// cluster and infrastructure don't have finalizer. it means deletion is already done.
+	if !controllerutil.ContainsFinalizer(cluster, key.DNSFinalizerNameNew) &&
+		!controllerutil.ContainsFinalizer(infraCluster, key.DNSFinalizerNameNew) {
+		return reconcile.Result{}, nil
+	}
+
 	route53Service := route53.NewService(clusterScope)
 
 	if err := route53Service.DeleteRoute53(ctx); err != nil {
@@ -155,8 +171,6 @@ func (r *ClusterReconciler) reconcileDelete(ctx context.Context, clusterScope *s
 		return reconcile.Result{}, microerror.Mask(err)
 	}
 
-	cluster := clusterScope.Cluster()
-	infraCluster := clusterScope.InfrastructureCluster()
 	// cluster is deleted so remove the finalizer.
 	controllerutil.RemoveFinalizer(cluster, key.DNSFinalizerNameNew)
 	if err := r.Update(ctx, cluster); err != nil {
