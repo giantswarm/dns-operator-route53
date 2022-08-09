@@ -9,8 +9,8 @@ rules:
   - cluster.x-k8s.io
   - infrastructure.cluster.x-k8s.io
   resources:
-  - openstackclusters
-  - openstackclusters/status
+  - {{ include "infraCluster"  . }}
+  - {{ include "infraCluster"  . }}/status
   - clusters
   - clusters/status
   verbs:

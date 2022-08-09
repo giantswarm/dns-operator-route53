@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - change `cluster-api-provider-openstack` packages from `v1alpha4` up to `v1alpha5` 
 - Reduce requeue time from five minutes to one minute to react faster to nginx IC being installed.
 - Improve finalizer addition&deletion to prevent unnecessary api calls.
+- Add new parameter to make RBAC configurable for different infra providers.
 
 ## [0.4.1] - 2022-03-04
 
