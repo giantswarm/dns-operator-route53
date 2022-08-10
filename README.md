@@ -1,6 +1,6 @@
-# dns-operator-openstack
+# dns-operator-route53
 
-`dns-operator-openstack` is a controller, which runs once per management Cluster. It's responsible for creating the following DNS Records per `cluster`:
+`dns-operator-route53` is a controller, which runs once per management Cluster. It's responsible for creating the following DNS Records per `cluster`:
 
 * `A`: `api.<clustername>.test.gigantic.io` (points to the kubernetes API IP of a `cluster`)
 * `A`: `bastion1.<clustername>.test.gigantic.io` (points to the bastion Host IP of a `cluster` - only on `OpenStack` yet)
@@ -16,8 +16,7 @@ behavior as equal as possible over different `infrastructureProviders` we do so.
 
 ### new infrastructure provider
 
-- [ ] extend RBAC
-      `dns-operator-openstack` need the `get/list/patch/update/watch` permissions on the `infrastructureProvider` specific `cluster` resource (e.g. `openstackcluster`) and the `/status` sub-resource of the corresponding cluster
+- [ ] extend RBAC by adapting `infraCluster` function in `_helpers.tpl` file.
 - [ ] if the new `infrastructureProvider` has the concept of a bastion host, extend the `BastionIP` method of `ClusterScope` to extract.
 
 ### known issues
@@ -27,7 +26,7 @@ behavior as equal as possible over different `infrastructureProviders` we do so.
   ```
   [...]
   1.6590013590095057e+09  ERROR   controller.cluster      error creating route53  {"reconciler group": "cluster.x-k8s.io", "reconciler kind": "Cluster", "name": "ssmcj", "namespace": "org-single-gs3", "error": "Get \"https://216.119.153.186:6443/api?timeout=32s\": EOF"}
-  github.com/giantswarm/dns-operator-openstack/controllers.(*ClusterReconciler).Reconcile
+  github.com/giantswarm/dns-operator-route53/controllers.(*ClusterReconciler).Reconcile
           /workspace/controllers/cluster_controller.go:98
   [...]
   ```
