@@ -9,9 +9,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/component-base/version"
 
-	"github.com/giantswarm/dns-operator-openstack/pkg/cloud"
-	awsmetrics "github.com/giantswarm/dns-operator-openstack/pkg/cloud/metrics"
-	"github.com/giantswarm/dns-operator-openstack/pkg/record"
+	"github.com/giantswarm/dns-operator-route53/pkg/cloud"
+	awsmetrics "github.com/giantswarm/dns-operator-route53/pkg/cloud/metrics"
+	"github.com/giantswarm/dns-operator-route53/pkg/record"
 )
 
 // AWSClients contains all the aws clients used by the scopes
@@ -23,7 +23,7 @@ type AWSClients struct {
 func NewRoute53Client(session cloud.Session, target runtime.Object) *route53.Route53 {
 	Route53Client := route53.New(session.Session(), &aws.Config{Credentials: credentials.NewSharedCredentials("", "")})
 	Route53Client.Handlers.Build.PushFrontNamed(getUserAgentHandler())
-	Route53Client.Handlers.CompleteAttempt.PushFront(awsmetrics.CaptureRequestMetrics("dns-operator-openstack"))
+	Route53Client.Handlers.CompleteAttempt.PushFront(awsmetrics.CaptureRequestMetrics("dns-operator-route53"))
 	Route53Client.Handlers.Complete.PushBack(recordAWSPermissionsIssue(target))
 
 	return Route53Client
@@ -31,8 +31,8 @@ func NewRoute53Client(session cloud.Session, target runtime.Object) *route53.Rou
 
 func getUserAgentHandler() request.NamedHandler {
 	return request.NamedHandler{
-		Name: "dns-operator-openstack/user-agent",
-		Fn:   request.MakeAddToUserAgentHandler("openstack.cluster.x-k8s.io", version.Get().String()),
+		Name: "dns-operator-route53/user-agent",
+		Fn:   request.MakeAddToUserAgentHandler("infrastructure.cluster.x-k8s.io", version.Get().String()),
 	}
 }
 

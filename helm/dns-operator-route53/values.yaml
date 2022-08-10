@@ -6,7 +6,7 @@ project:
   branch: "[[ .Branch ]]"
   commit: "[[ .SHA ]]"
 image:
-  name: "giantswarm/dns-operator-openstack"
+  name: "giantswarm/dns-operator-route53"
   tag: "[[ .Version ]]"
 registry:
   domain: docker.io

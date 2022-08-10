@@ -24,7 +24,7 @@ type ClusterObject interface {
 type ClusterScoper interface {
 	Session
 
-	// APIEndpoint returns the OpenStack LoadBalancer API endpoint for the cluster.
+	// APIEndpoint returns the LoadBalancer API endpoint for the cluster.
 	// e.g. apiserver-x.eu-central-1.elb.amazonaws.com
 	APIEndpoint() string
 	// BaseDomain returns the base domain.

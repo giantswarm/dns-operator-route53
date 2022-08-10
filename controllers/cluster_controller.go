@@ -20,11 +20,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/giantswarm/dns-operator-openstack/pkg/cloud/scope"
-	"github.com/giantswarm/dns-operator-openstack/pkg/cloud/services/route53"
-	"github.com/giantswarm/dns-operator-openstack/pkg/key"
+	"github.com/giantswarm/dns-operator-route53/pkg/cloud/scope"
+	"github.com/giantswarm/dns-operator-route53/pkg/cloud/services/route53"
+	"github.com/giantswarm/dns-operator-route53/pkg/key"
 
-	"github.com/giantswarm/microerror"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	capi "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -35,9 +34,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"github.com/giantswarm/microerror"
 )
 
-// ClusterReconciler reconciles a openstackCluster object
+// ClusterReconciler reconciles a Cluster object
 type ClusterReconciler struct {
 	client.Client
 
@@ -153,7 +154,7 @@ func (r *ClusterReconciler) reconcileNormal(ctx context.Context, clusterScope *s
 
 func (r *ClusterReconciler) reconcileDelete(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := log.FromContext(ctx)
-	log.Info("Reconciling openstackCluster delete")
+	log.Info("Reconciling Cluster delete")
 
 	cluster := clusterScope.Cluster()
 	infraCluster := clusterScope.InfrastructureCluster()

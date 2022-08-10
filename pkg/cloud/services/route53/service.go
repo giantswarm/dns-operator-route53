@@ -3,7 +3,7 @@ package route53
 import (
 	"github.com/aws/aws-sdk-go/service/route53/route53iface"
 
-	"github.com/giantswarm/dns-operator-openstack/pkg/cloud/scope"
+	"github.com/giantswarm/dns-operator-route53/pkg/cloud/scope"
 )
 
 // Service holds a collection of interfaces.
