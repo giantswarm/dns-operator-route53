@@ -126,7 +126,7 @@ func (s *ClusterScope) ClusterDomain() string {
 	return fmt.Sprintf("%s.%s", s.Name(), s.baseDomain)
 }
 
-// Name returns the Openstack cluster name.
+// Name returns the cluster name.
 func (s *ClusterScope) Name() string {
 	return s.cluster.Name
 }

@@ -32,7 +32,7 @@ func NewRoute53Client(session cloud.Session, target runtime.Object) *route53.Rou
 func getUserAgentHandler() request.NamedHandler {
 	return request.NamedHandler{
 		Name: "dns-operator-route53/user-agent",
-		Fn:   request.MakeAddToUserAgentHandler("openstack.cluster.x-k8s.io", version.Get().String()),
+		Fn:   request.MakeAddToUserAgentHandler("infrastructure.cluster.x-k8s.io", version.Get().String()),
 	}
 }
 

@@ -38,7 +38,7 @@ import (
 	"github.com/giantswarm/microerror"
 )
 
-// ClusterReconciler reconciles a openstackCluster object
+// ClusterReconciler reconciles a Cluster object
 type ClusterReconciler struct {
 	client.Client
 
@@ -154,7 +154,7 @@ func (r *ClusterReconciler) reconcileNormal(ctx context.Context, clusterScope *s
 
 func (r *ClusterReconciler) reconcileDelete(ctx context.Context, clusterScope *scope.ClusterScope) (reconcile.Result, error) {
 	log := log.FromContext(ctx)
-	log.Info("Reconciling openstackCluster delete")
+	log.Info("Reconciling Cluster delete")
 
 	cluster := clusterScope.Cluster()
 	infraCluster := clusterScope.InfrastructureCluster()
