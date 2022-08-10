@@ -9,9 +9,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/component-base/version"
 
-	"github.com/giantswarm/dns-operator-openstack/pkg/cloud"
-	awsmetrics "github.com/giantswarm/dns-operator-openstack/pkg/cloud/metrics"
-	"github.com/giantswarm/dns-operator-openstack/pkg/record"
+	"github.com/giantswarm/dns-operator-route53/pkg/cloud"
+	awsmetrics "github.com/giantswarm/dns-operator-route53/pkg/cloud/metrics"
+	"github.com/giantswarm/dns-operator-route53/pkg/record"
 )
 
 // AWSClients contains all the aws clients used by the scopes

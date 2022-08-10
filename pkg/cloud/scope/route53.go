@@ -1,7 +1,7 @@
 package scope
 
 import (
-	"github.com/giantswarm/dns-operator-openstack/pkg/cloud"
+	"github.com/giantswarm/dns-operator-route53/pkg/cloud"
 )
 
 // Route53Scope is a scope for use with the Route53 reconciling service

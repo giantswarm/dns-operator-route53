@@ -1,4 +1,4 @@
-module github.com/giantswarm/dns-operator-openstack
+module github.com/giantswarm/dns-operator-route53
 
 go 1.18
 

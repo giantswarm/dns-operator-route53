@@ -28,7 +28,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	"github.com/giantswarm/dns-operator-openstack/controllers"
+	"github.com/giantswarm/dns-operator-route53/controllers"
 	// +kubebuilder:scaffold:imports
 )
 

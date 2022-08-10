@@ -4,10 +4,11 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/service/route53"
-	"github.com/giantswarm/microerror"
 	"github.com/pkg/errors"
 
-	"github.com/giantswarm/dns-operator-openstack/pkg/cloud/awserrors"
+	"github.com/giantswarm/microerror"
+
+	"github.com/giantswarm/dns-operator-route53/pkg/cloud/awserrors"
 )
 
 // IsNotFound asserts notFoundError.

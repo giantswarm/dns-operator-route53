@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/giantswarm/dns-operator-openstack/pkg/cloud/awserrors"
+	"github.com/giantswarm/dns-operator-route53/pkg/cloud/awserrors"
 
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/prometheus/client_golang/prometheus"
