@@ -70,7 +70,7 @@ func main() {
 		MetricsBindAddress: metricsAddr,
 		Port:               9443,
 		LeaderElection:     enableLeaderElection,
-		LeaderElectionID:   "dns-operator-openstack.giantswarm.io",
+		LeaderElectionID:   "dns-operator-route53.giantswarm.io",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
