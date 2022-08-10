@@ -3,3 +3,5 @@ accessKeyID: ""
 secretAccessKey: ""
 baseDomain: ""
 managementCluster: ""
+provider:
+  kind: ""
