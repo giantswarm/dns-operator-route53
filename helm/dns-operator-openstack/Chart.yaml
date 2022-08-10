@@ -1,8 +1,8 @@
-name: dns-operator-openstack
+name: dns-operator-route53
 version: [[ .Version ]]
 description: "Operator for managing DNS zones and records for CAPO clusters"
 appVersion: "[[ .AppVersion ]]"
-home: "https://github.com/giantswarm/dns-operator-openstack"
+home: "https://github.com/giantswarm/dns-operator-route53"
 apiVersion: v1
 annotations:
   application.giantswarm.io/team: "rocket"
