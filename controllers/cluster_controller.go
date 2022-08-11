@@ -129,16 +129,6 @@ func (r *ClusterReconciler) reconcileNormal(ctx context.Context, clusterScope *s
 		}
 	}
 
-	// TODO start: delete after all CAPO based clusters got migrated to new finalizer
-	// remove the old finalizer from infrastructure clusters
-	if controllerutil.ContainsFinalizer(infraCluster, key.DNSFinalizerNameOld) {
-		controllerutil.RemoveFinalizer(infraCluster, key.DNSFinalizerNameOld)
-		if err := r.Update(ctx, infraCluster); err != nil {
-			return reconcile.Result{}, microerror.Mask(err)
-		}
-	}
-	// TODO end
-
 	route53Service := route53.NewService(clusterScope)
 	err := route53Service.ReconcileRoute53(ctx)
 	if route53.IsIngressNotReady(err) {
