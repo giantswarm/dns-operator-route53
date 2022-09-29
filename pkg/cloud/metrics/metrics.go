@@ -11,6 +11,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/prometheus/client_golang/prometheus"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
+
+	dnscache "github.com/giantswarm/dns-operator-route53/pkg/cloud/cache"
 )
 
 const (
@@ -23,6 +25,7 @@ const (
 	metricControllerLabel    = "controller"
 	metricStatusCodeLabel    = "status_code"
 	metricErrorCodeLabel     = "error_code"
+	metricCacheSubsystem     = "cache"
 )
 
 var (
@@ -42,12 +45,30 @@ var (
 		Help:      "Number of retries made against an AWS API",
 		Buckets:   []float64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
 	}, []string{metricControllerLabel, metricServiceLabel, metricOperationLabel})
+	cacheItems = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Subsystem: metricCacheSubsystem,
+		Name:      "items",
+		Help:      "Number of items in the cache",
+	}, []string{metricControllerLabel})
+	cacheHits = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Subsystem: metricCacheSubsystem,
+		Name:      "hits",
+		Help:      "Number of cache hits",
+	}, []string{metricControllerLabel})
+	cacheSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Subsystem: metricCacheSubsystem,
+		Name:      "size",
+		Help:      "Size of cache in bytes",
+	}, []string{metricControllerLabel})
 )
 
 func init() {
 	metrics.Registry.MustRegister(awsRequestCount)
 	metrics.Registry.MustRegister(awsRequestDurationSeconds)
 	metrics.Registry.MustRegister(awsCallRetries)
+	metrics.Registry.MustRegister(cacheItems)
+	metrics.Registry.MustRegister(cacheHits)
+	metrics.Registry.MustRegister(cacheSize)
 }
 
 func CaptureRequestMetrics(controller string) func(r *request.Request) {
@@ -69,6 +90,9 @@ func CaptureRequestMetrics(controller string) func(r *request.Request) {
 		awsRequestCount.WithLabelValues(controller, service, operation, statusCode, errorCode).Inc()
 		awsRequestDurationSeconds.WithLabelValues(controller, service, operation).Observe(duration.Seconds())
 		awsCallRetries.WithLabelValues(controller, service, operation).Observe(float64(r.RetryCount))
+		cacheItems.WithLabelValues(controller).Set(float64(dnscache.DNSOperatorCache.Len()))
+		cacheHits.WithLabelValues(controller).Set(float64(dnscache.DNSOperatorCache.Stats().Hits))
+		cacheSize.WithLabelValues(controller).Set(float64(dnscache.DNSOperatorCache.Capacity()))
 	}
 }
 

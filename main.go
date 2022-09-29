@@ -28,6 +28,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/giantswarm/dns-operator-route53/controllers"
+
+	"github.com/allegro/bigcache/v3"
+	dnscache "github.com/giantswarm/dns-operator-route53/pkg/cloud/cache"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -63,6 +66,9 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 
+	// Initialize the cache with a custom configuration
+	dnscache.DNSOperatorCache, _ = bigcache.NewBigCache(dnscache.Config)
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,
 		MetricsBindAddress: metricsAddr,
@@ -76,8 +82,7 @@ func main() {
 	}
 
 	if err = (&controllers.ClusterReconciler{
-		Client: mgr.GetClient(),
-
+		Client:            mgr.GetClient(),
 		BaseDomain:        baseDomain,
 		ManagementCluster: managementCluster,
 	}).SetupWithManager(mgr); err != nil {

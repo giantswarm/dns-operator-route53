@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Remove CAPO go dependency.
 - Normal reconciliation is only done if a cluster is in `Provisioned` state.
+- Cache route53 API responses.
+- Expose metrics about the internal cache.
 - Remove the code piece that cleans old finalizers for migration.
 
 ## [0.5.0] - 2022-08-10
