@@ -1,6 +1,4 @@
 /*
-
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -18,6 +16,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/giantswarm/dns-operator-route53/pkg/cloud/scope"
@@ -26,6 +25,7 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"sigs.k8s.io/cluster-api/api/v1beta1"
 	capi "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
@@ -127,6 +127,13 @@ func (r *ClusterReconciler) reconcileNormal(ctx context.Context, clusterScope *s
 		if err := r.Update(ctx, infraCluster); err != nil {
 			return reconcile.Result{}, microerror.Mask(err)
 		}
+	}
+
+	// If a cluster isn't provisioned we don't need to reconcile it
+	// as not all information for creating DNS records are available yet.
+	if cluster.Status.Phase != string(v1beta1.ClusterPhaseProvisioned) {
+		log.Info(fmt.Sprintf("Requeuing cluster %s - phase %s, ", cluster.Name, cluster.Status.Phase))
+		return ctrl.Result{RequeueAfter: 2 * time.Minute}, nil
 	}
 
 	route53Service := route53.NewService(clusterScope)

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Normal reconciliation is only done if a cluster is in `Provisioned` state.
 - Remove the code piece that cleans old finalizers for migration.
 
 ## [0.5.0] - 2022-08-10
