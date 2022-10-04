@@ -23,7 +23,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	capo "sigs.k8s.io/cluster-api-provider-openstack/api/v1alpha5"
 	capi "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -41,7 +40,6 @@ func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 
 	_ = capi.AddToScheme(scheme)
-	_ = capo.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }
 
