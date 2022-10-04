@@ -36,6 +36,10 @@ spec:
         - --enable-leader-election
         - --base-domain={{ .Values.baseDomain }}
         - --management-cluster={{ .Values.managementCluster }}
+        ports:
+        - name: metrics
+          containerPort: 8080
+          protocol: TCP
         resources:
           requests:
             memory: 100Mi
