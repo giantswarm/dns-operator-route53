@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/allegro/bigcache/v3"
@@ -9,10 +10,10 @@ import (
 var DNSOperatorCache *bigcache.BigCache
 
 const (
-	ClusterIngressRecordsPrefix = "ingressRecords"
-	ZoneRecordsPrefix           = "zoneRecords"
-	ZoneIDPrefix                = "zoneID"
-	NameserverRecordsPrefix     = "nameserverRecords"
+	clusterIngressRecordsPrefix = "ingressRecords"
+	zoneRecordsPrefix           = "zoneRecords"
+	zoneIDPrefix                = "zoneID"
+	nameserverRecordsPrefix     = "nameserverRecords"
 )
 
 // Setting an own cache config as the default configuration will lead in
@@ -55,7 +56,54 @@ var config = bigcache.Config{
 	OnRemoveWithReason: nil,
 }
 
-// NewDNSOperatorCache create a new BigCache with our custom configuration
 func NewDNSOperatorCache() (*bigcache.BigCache, error) {
 	return bigcache.NewBigCache(config)
+}
+
+func GetDNSCacheZoneRecordsPrefixEntry(keySuffix string) ([]byte, error) {
+	return DNSOperatorCache.Get(fmt.Sprintf("%s-%s", zoneRecordsPrefix, keySuffix))
+}
+
+func SetDNSCacheZoneRecordsPrefixEntry(keySuffix string, data []byte) error {
+	return DNSOperatorCache.Set(fmt.Sprintf("%s-%s", zoneRecordsPrefix, keySuffix), data)
+}
+
+func DeleteDNSCacheZoneRecordsPrefixEntry(keySuffix string) error {
+	return DNSOperatorCache.Delete(fmt.Sprintf("%s-%s", zoneRecordsPrefix, keySuffix))
+}
+
+func GetDNSCacheZoneIDPrefixEntry(keySuffix string) ([]byte, error) {
+	return DNSOperatorCache.Get(fmt.Sprintf("%s-%s", zoneIDPrefix, keySuffix))
+}
+
+func SetDNSCacheZoneIDPrefixEntry(keySuffix string, data []byte) error {
+	return DNSOperatorCache.Set(fmt.Sprintf("%s-%s", zoneIDPrefix, keySuffix), data)
+}
+
+func DeleteDNSCacheZoneIDPrefixEntry(keySuffix string) error {
+	return DNSOperatorCache.Delete(fmt.Sprintf("%s-%s", zoneIDPrefix, keySuffix))
+}
+
+func GetDNSCacheNameserverRecordsEntry(keySuffix string) ([]byte, error) {
+	return DNSOperatorCache.Get(fmt.Sprintf("%s-%s", nameserverRecordsPrefix, keySuffix))
+}
+
+func SetDNSCacheNameserverRecordsEntry(keySuffix string, data []byte) error {
+	return DNSOperatorCache.Set(fmt.Sprintf("%s-%s", nameserverRecordsPrefix, keySuffix), data)
+}
+
+func DeleteDNSCacheNameserverRecordsEntry(keySuffix string) error {
+	return DNSOperatorCache.Delete(fmt.Sprintf("%s-%s", nameserverRecordsPrefix, keySuffix))
+}
+
+func GetDNSCacheClusterIngressRecordsEntry(keySuffix string) ([]byte, error) {
+	return DNSOperatorCache.Get(fmt.Sprintf("%s-%s", clusterIngressRecordsPrefix, keySuffix))
+}
+
+func SetDNSCacheClusterIngressRecordsEntry(keySuffix string, data []byte) error {
+	return DNSOperatorCache.Set(fmt.Sprintf("%s-%s", clusterIngressRecordsPrefix, keySuffix), data)
+}
+
+func DeleteDNSCacheClusterIngressRecordsEntry(keySuffix string) error {
+	return DNSOperatorCache.Delete(fmt.Sprintf("%s-%s", clusterIngressRecordsPrefix, keySuffix))
 }

@@ -67,7 +67,7 @@ func (s *Service) ReconcileRoute53(ctx context.Context) error {
 	log := log.FromContext(ctx)
 	log.Info("Reconciling hosted DNS zone")
 
-	cachedHostedZoneID, err := dnscache.DNSOperatorCache.Get(fmt.Sprintf("%s-%s", dnscache.ZoneIDPrefix, s.scope.Name()))
+	cachedHostedZoneID, err := dnscache.GetDNSCacheZoneIDPrefixEntry(s.scope.Name())
 	if errors.Is(err, bigcache.ErrEntryNotFound) {
 		log.Info(fmt.Sprintf("no hostedZoneID found in local cache for cluster %s", s.scope.Name()))
 		// Describe or create.
@@ -82,8 +82,13 @@ func (s *Service) ReconcileRoute53(ctx context.Context) error {
 			return microerror.Mask(err)
 		}
 
-		dnscache.DNSOperatorCache.Set(fmt.Sprintf("%s-%s", dnscache.ZoneIDPrefix, s.scope.Name()), []byte(hostedZoneID))
-		cachedHostedZoneID, _ = dnscache.DNSOperatorCache.Get(fmt.Sprintf("%s-%s", dnscache.ZoneIDPrefix, s.scope.Name()))
+		if err := dnscache.SetDNSCacheZoneIDPrefixEntry(s.scope.Name(), []byte(hostedZoneID)); err != nil {
+			return err
+		}
+		cachedHostedZoneID, err = dnscache.GetDNSCacheZoneIDPrefixEntry(s.scope.Name())
+		if err != nil {
+			return err
+		}
 	}
 
 	if err := s.changeClusterNSDelegation(ctx, string(cachedHostedZoneID), actionUpsert); err != nil {
@@ -148,9 +153,11 @@ func (s *Service) changeClusterIngressRecords(ctx context.Context, hostedZoneID,
 		},
 	}
 
-	cachedClusterIngressRecords, _ := dnscache.DNSOperatorCache.Get(fmt.Sprintf("%s-%s", dnscache.ClusterIngressRecordsPrefix, hostedZoneID))
+	cachedClusterIngressRecords, _ := dnscache.GetDNSCacheClusterIngressRecordsEntry(hostedZoneID)
 	if input.String() != string(cachedClusterIngressRecords) {
-		dnscache.DNSOperatorCache.Set(fmt.Sprintf("%s-%s", dnscache.ClusterIngressRecordsPrefix, hostedZoneID), []byte(input.String()))
+		if err = dnscache.SetDNSCacheClusterIngressRecordsEntry(hostedZoneID, []byte(input.String())); err != nil {
+			return err
+		}
 
 		if _, err := s.Route53Client.ChangeResourceRecordSetsWithContext(ctx, input); err != nil {
 			return wrapRoute53Error(err)
@@ -164,7 +171,7 @@ func (s *Service) changeClusterNSDelegation(ctx context.Context, hostedZoneID, a
 	log := log.FromContext(ctx)
 
 	var resourceRecords []*route53.ResourceRecord
-	cachedRecords, err := dnscache.DNSOperatorCache.Get(fmt.Sprintf("%s-%s", dnscache.NameserverRecordsPrefix, hostedZoneID))
+	cachedRecords, err := dnscache.GetDNSCacheNameserverRecordsEntry(hostedZoneID)
 	if errors.Is(err, bigcache.ErrEntryNotFound) {
 		log.V(4).Info(fmt.Sprintf("no cached name server records found for zone %s", hostedZoneID))
 
@@ -174,19 +181,20 @@ func (s *Service) changeClusterNSDelegation(ctx context.Context, hostedZoneID, a
 		}
 
 		jsonRecords, _ := json.Marshal(resourceRecords)
-		dnscache.DNSOperatorCache.Set(fmt.Sprintf("%s-%s", dnscache.NameserverRecordsPrefix, hostedZoneID), []byte(jsonRecords))
-		cachedRecords, _ = dnscache.DNSOperatorCache.Get(fmt.Sprintf("%s-%s", dnscache.NameserverRecordsPrefix, hostedZoneID))
+		if err = dnscache.SetDNSCacheNameserverRecordsEntry(hostedZoneID, []byte(string(jsonRecords))); err != nil {
+			return err
+		}
+		cachedRecords, err = dnscache.GetDNSCacheNameserverRecordsEntry(hostedZoneID)
+		if err != nil {
+			return err
+		}
 	}
 
 	if err := json.Unmarshal(cachedRecords, &resourceRecords); err != nil {
 		return err
 	}
 
-	//log.V(6).WithValues("cluster", s.scope.ClusterDomain(), "records", resourceRecords)
-	log.V(6).WithValues("cluster", s.scope.ClusterDomain(), "records", resourceRecords)
-	log.WithValues("cluster logv6", s.scope.ClusterDomain(), "records", resourceRecords)
-
-	cachedBaseHostedZoneID, err := dnscache.DNSOperatorCache.Get(fmt.Sprintf("%s-%s", dnscache.ZoneIDPrefix, s.scope.ClusterDomain()))
+	cachedBaseHostedZoneID, err := dnscache.GetDNSCacheZoneIDPrefixEntry(s.scope.ClusterDomain())
 	if errors.Is(err, bigcache.ErrEntryNotFound) {
 		log.Info(fmt.Sprintf("no cached zone id found for domain %s", s.scope.ClusterDomain()))
 
@@ -195,11 +203,14 @@ func (s *Service) changeClusterNSDelegation(ctx context.Context, hostedZoneID, a
 			return microerror.Mask(err)
 		}
 
-		dnscache.DNSOperatorCache.Set(fmt.Sprintf("%s-%s", dnscache.ZoneIDPrefix, s.scope.ClusterDomain()), []byte(baseHostedZoneID))
-		cachedBaseHostedZoneID, _ = dnscache.DNSOperatorCache.Get(fmt.Sprintf("%s-%s", dnscache.ZoneIDPrefix, s.scope.ClusterDomain()))
+		if err = dnscache.SetDNSCacheZoneIDPrefixEntry(s.scope.ClusterDomain(), []byte(baseHostedZoneID)); err != nil {
+			return err
+		}
+		cachedBaseHostedZoneID, err = dnscache.GetDNSCacheZoneIDPrefixEntry(s.scope.ClusterDomain())
+		if err != nil {
+			return err
+		}
 	}
-
-	log.V(6).WithValues("cluster", s.scope.ClusterDomain(), "zone ID", string(cachedBaseHostedZoneID))
 
 	input := &route53.ChangeResourceRecordSetsInput{
 		HostedZoneId: aws.String(string(cachedBaseHostedZoneID)),
@@ -218,13 +229,15 @@ func (s *Service) changeClusterNSDelegation(ctx context.Context, hostedZoneID, a
 		},
 	}
 
-	cachedBaseHostedZoneIDRecords, _ := dnscache.DNSOperatorCache.Get(fmt.Sprintf("%s-%s", dnscache.ZoneRecordsPrefix, s.scope.ClusterDomain()))
+	cachedBaseHostedZoneIDRecords, _ := dnscache.GetDNSCacheZoneRecordsPrefixEntry(s.scope.ClusterDomain())
 
 	// if cached input differ from computed input
 	if input.String() != string(cachedBaseHostedZoneIDRecords) {
 		log.Info(fmt.Sprintf("cached records for zone ID %s differs from computed records. Updating ResourceRecordSet", string(cachedBaseHostedZoneID)))
 
-		dnscache.DNSOperatorCache.Set(fmt.Sprintf("%s-%s", dnscache.ZoneRecordsPrefix, s.scope.ClusterDomain()), []byte(input.String()))
+		if err := dnscache.SetDNSCacheZoneRecordsPrefixEntry(s.scope.ClusterDomain(), []byte(input.String())); err != nil {
+			return err
+		}
 
 		_, err := s.Route53Client.ChangeResourceRecordSetsWithContext(ctx, input)
 		if err != nil {
@@ -244,7 +257,7 @@ func (s *Service) changeClusterRecords(ctx context.Context, hostedZoneID string,
 		},
 	}
 
-	cachedHostedZoneIDRecordSets, err := dnscache.DNSOperatorCache.Get(fmt.Sprintf("%s-%s", dnscache.ZoneRecordsPrefix, hostedZoneID))
+	cachedHostedZoneIDRecordSets, err := dnscache.GetDNSCacheZoneRecordsPrefixEntry(hostedZoneID)
 	if errors.Is(err, bigcache.ErrEntryNotFound) {
 
 		log.Info(fmt.Sprintf("no cached resource record set found for zone id %s", hostedZoneID))
@@ -255,8 +268,13 @@ func (s *Service) changeClusterRecords(ctx context.Context, hostedZoneID string,
 		}
 
 		jsonRecords, _ := json.Marshal(recordSets.ResourceRecordSets)
-		dnscache.DNSOperatorCache.Set(fmt.Sprintf("%s-%s", dnscache.ZoneRecordsPrefix, hostedZoneID), []byte(jsonRecords))
-		cachedHostedZoneIDRecordSets, _ = dnscache.DNSOperatorCache.Get(fmt.Sprintf("%s-%s", dnscache.ZoneRecordsPrefix, hostedZoneID))
+		if err = dnscache.SetDNSCacheZoneRecordsPrefixEntry(hostedZoneID, jsonRecords); err != nil {
+			return err
+		}
+		cachedHostedZoneIDRecordSets, err = dnscache.GetDNSCacheZoneRecordsPrefixEntry(hostedZoneID)
+		if err != nil {
+			return err
+		}
 	}
 
 	var recordSets []*route53.ResourceRecordSet
@@ -304,7 +322,9 @@ func (s *Service) changeClusterRecords(ctx context.Context, hostedZoneID string,
 
 	if len(input.ChangeBatch.Changes) > 0 {
 		// invalidate the cache
-		dnscache.DNSOperatorCache.Delete(fmt.Sprintf("%s-%s", dnscache.ZoneRecordsPrefix, hostedZoneID))
+		if err = dnscache.DeleteDNSCacheZoneRecordsPrefixEntry(hostedZoneID); err != nil {
+			return err
+		}
 
 		if _, err := s.Route53Client.ChangeResourceRecordSetsWithContext(ctx, input); err != nil {
 			return wrapRoute53Error(err)
