@@ -17,7 +17,7 @@ const (
 
 // Setting an own cache config as the default configuration will lead in
 // +80 MB in working_set_bytes
-var Config = bigcache.Config{
+var config = bigcache.Config{
 	// number of shards (must be a power of 2)
 	Shards: 256,
 
@@ -53,4 +53,9 @@ var Config = bigcache.Config{
 	// Default value is nil which means no callback and it prevents from unwrapping the oldest entry.
 	// Ignored if OnRemove is specified.
 	OnRemoveWithReason: nil,
+}
+
+// NewDNSOperatorCache create a new BigCache with our custom configuration
+func NewDNSOperatorCache() (*bigcache.BigCache, error) {
+	return bigcache.NewBigCache(config)
 }
