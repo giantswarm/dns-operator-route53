@@ -3,6 +3,7 @@ module github.com/giantswarm/dns-operator-route53
 go 1.18
 
 require (
+	github.com/allegro/bigcache/v3 v3.0.2
 	github.com/aws/aws-sdk-go v1.44.57
 	github.com/giantswarm/k8sclient/v6 v6.1.0
 	github.com/giantswarm/microerror v0.4.0
