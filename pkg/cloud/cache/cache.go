@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -14,6 +15,11 @@ const (
 	zoneRecordsPrefix           = "zoneRecords"
 	zoneIDPrefix                = "zoneID"
 	nameserverRecordsPrefix     = "nameserverRecords"
+
+	ClusterIngressRecords = 1
+	ZoneRecords           = 2
+	ZoneID                = 3
+	NameserverRecords     = 4
 )
 
 // Setting an own cache config as the default configuration will lead in
@@ -60,50 +66,53 @@ func NewDNSOperatorCache() (*bigcache.BigCache, error) {
 	return bigcache.NewBigCache(config)
 }
 
-func GetDNSCacheZoneRecordsPrefixEntry(keySuffix string) ([]byte, error) {
-	return DNSOperatorCache.Get(fmt.Sprintf("%s-%s", zoneRecordsPrefix, keySuffix))
+func GetDNSCacheRecord(recordID int, keySuffix string) ([]byte, error) {
+
+	switch recordID {
+	case ClusterIngressRecords:
+		return DNSOperatorCache.Get(fmt.Sprintf("%s-%s", clusterIngressRecordsPrefix, keySuffix))
+	case ZoneRecords:
+		return DNSOperatorCache.Get(fmt.Sprintf("%s-%s", zoneRecordsPrefix, keySuffix))
+	case ZoneID:
+		return DNSOperatorCache.Get(fmt.Sprintf("%s-%s", zoneIDPrefix, keySuffix))
+	case NameserverRecords:
+		return DNSOperatorCache.Get(fmt.Sprintf("%s-%s", nameserverRecordsPrefix, keySuffix))
+	default:
+		return nil, errors.New("no known cache identifier")
+	}
+
 }
 
-func SetDNSCacheZoneRecordsPrefixEntry(keySuffix string, data []byte) error {
-	return DNSOperatorCache.Set(fmt.Sprintf("%s-%s", zoneRecordsPrefix, keySuffix), data)
+func SetDNSCacheRecord(recordID int, keySuffix string, data []byte) error {
+
+	switch recordID {
+	case ClusterIngressRecords:
+		return DNSOperatorCache.Set(fmt.Sprintf("%s-%s", clusterIngressRecordsPrefix, keySuffix), data)
+	case ZoneRecords:
+		return DNSOperatorCache.Set(fmt.Sprintf("%s-%s", zoneRecordsPrefix, keySuffix), data)
+	case ZoneID:
+		return DNSOperatorCache.Set(fmt.Sprintf("%s-%s", zoneIDPrefix, keySuffix), data)
+	case NameserverRecords:
+		return DNSOperatorCache.Set(fmt.Sprintf("%s-%s", nameserverRecordsPrefix, keySuffix), data)
+	default:
+		return errors.New("no known cache identifier")
+	}
+
 }
 
-func DeleteDNSCacheZoneRecordsPrefixEntry(keySuffix string) error {
-	return DNSOperatorCache.Delete(fmt.Sprintf("%s-%s", zoneRecordsPrefix, keySuffix))
-}
+func DeleteDNSCacheRecord(recordID int, keySuffix string) error {
 
-func GetDNSCacheZoneIDPrefixEntry(keySuffix string) ([]byte, error) {
-	return DNSOperatorCache.Get(fmt.Sprintf("%s-%s", zoneIDPrefix, keySuffix))
-}
+	switch recordID {
+	case ClusterIngressRecords:
+		return DNSOperatorCache.Delete(fmt.Sprintf("%s-%s", clusterIngressRecordsPrefix, keySuffix))
+	case ZoneRecords:
+		return DNSOperatorCache.Delete(fmt.Sprintf("%s-%s", zoneRecordsPrefix, keySuffix))
+	case ZoneID:
+		return DNSOperatorCache.Delete(fmt.Sprintf("%s-%s", zoneIDPrefix, keySuffix))
+	case NameserverRecords:
+		return DNSOperatorCache.Delete(fmt.Sprintf("%s-%s", nameserverRecordsPrefix, keySuffix))
+	default:
+		return errors.New("no known cache identifier")
+	}
 
-func SetDNSCacheZoneIDPrefixEntry(keySuffix string, data []byte) error {
-	return DNSOperatorCache.Set(fmt.Sprintf("%s-%s", zoneIDPrefix, keySuffix), data)
-}
-
-func DeleteDNSCacheZoneIDPrefixEntry(keySuffix string) error {
-	return DNSOperatorCache.Delete(fmt.Sprintf("%s-%s", zoneIDPrefix, keySuffix))
-}
-
-func GetDNSCacheNameserverRecordsEntry(keySuffix string) ([]byte, error) {
-	return DNSOperatorCache.Get(fmt.Sprintf("%s-%s", nameserverRecordsPrefix, keySuffix))
-}
-
-func SetDNSCacheNameserverRecordsEntry(keySuffix string, data []byte) error {
-	return DNSOperatorCache.Set(fmt.Sprintf("%s-%s", nameserverRecordsPrefix, keySuffix), data)
-}
-
-func DeleteDNSCacheNameserverRecordsEntry(keySuffix string) error {
-	return DNSOperatorCache.Delete(fmt.Sprintf("%s-%s", nameserverRecordsPrefix, keySuffix))
-}
-
-func GetDNSCacheClusterIngressRecordsEntry(keySuffix string) ([]byte, error) {
-	return DNSOperatorCache.Get(fmt.Sprintf("%s-%s", clusterIngressRecordsPrefix, keySuffix))
-}
-
-func SetDNSCacheClusterIngressRecordsEntry(keySuffix string, data []byte) error {
-	return DNSOperatorCache.Set(fmt.Sprintf("%s-%s", clusterIngressRecordsPrefix, keySuffix), data)
-}
-
-func DeleteDNSCacheClusterIngressRecordsEntry(keySuffix string) error {
-	return DNSOperatorCache.Delete(fmt.Sprintf("%s-%s", clusterIngressRecordsPrefix, keySuffix))
 }
