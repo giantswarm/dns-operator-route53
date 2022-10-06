@@ -405,6 +405,16 @@ func (s *Service) deleteClusterRecords(ctx context.Context, hostedZoneID string)
 		return wrapRoute53Error(err)
 	}
 
+	// delete cached records for given Zone
+	if err = dnscache.DeleteDNSCacheRecord(dnscache.ZoneRecords, hostedZoneID); err != nil {
+		return err
+	}
+
+	// delete cached zoneID for cluster
+	if err = dnscache.DeleteDNSCacheRecord(dnscache.ZoneID, s.scope.Name()); err != nil {
+		return err
+	}
+
 	return nil
 }
 
