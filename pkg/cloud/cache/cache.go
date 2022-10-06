@@ -20,6 +20,8 @@ const (
 	ZoneRecords           = 2
 	ZoneID                = 3
 	NameserverRecords     = 4
+
+	unknownCacheIDError = "unknown cache identifier"
 )
 
 // Setting an own cache config as the default configuration will lead in
@@ -78,7 +80,7 @@ func GetDNSCacheRecord(recordID int, keySuffix string) ([]byte, error) {
 	case NameserverRecords:
 		return DNSOperatorCache.Get(fmt.Sprintf("%s-%s", nameserverRecordsPrefix, keySuffix))
 	default:
-		return nil, errors.New("no known cache identifier")
+		return nil, errors.New(unknownCacheIDError)
 	}
 
 }
@@ -95,7 +97,7 @@ func SetDNSCacheRecord(recordID int, keySuffix string, data []byte) error {
 	case NameserverRecords:
 		return DNSOperatorCache.Set(fmt.Sprintf("%s-%s", nameserverRecordsPrefix, keySuffix), data)
 	default:
-		return errors.New("no known cache identifier")
+		return errors.New(unknownCacheIDError)
 	}
 
 }
@@ -112,7 +114,7 @@ func DeleteDNSCacheRecord(recordID int, keySuffix string) error {
 	case NameserverRecords:
 		return DNSOperatorCache.Delete(fmt.Sprintf("%s-%s", nameserverRecordsPrefix, keySuffix))
 	default:
-		return errors.New("no known cache identifier")
+		return errors.New(unknownCacheIDError)
 	}
 
 }
