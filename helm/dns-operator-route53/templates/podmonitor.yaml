@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  labels:
+    {{- include "labels.common" . | nindent 4 }}
+  name: dns-operator-route53
+  namespace: giantswarm
+spec:
+  namespaceSelector:
+    matchNames:
+    - giantswarm
+  podMetricsEndpoints:
+  - targetPort: 8080
+  selector:
+    matchLabels:
+      {{- include "labels.selector" . | nindent 6}}
