@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- switched to a `podmonitor` for metrics scraping.
+
 ## [0.6.1] - 2022-10-06
 
 ### Fixed

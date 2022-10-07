@@ -25,7 +25,7 @@ const (
 	metricControllerLabel    = "controller"
 	metricStatusCodeLabel    = "status_code"
 	metricErrorCodeLabel     = "error_code"
-	metricCacheSubsystem     = "cache"
+	metricCacheSubsystem     = "route53cache"
 )
 
 var (
@@ -47,13 +47,18 @@ var (
 	}, []string{metricControllerLabel, metricServiceLabel, metricOperationLabel})
 	cacheItems = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Subsystem: metricCacheSubsystem,
-		Name:      "items",
+		Name:      "entries",
 		Help:      "Number of items in the cache",
 	}, []string{metricControllerLabel})
 	cacheHits = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Subsystem: metricCacheSubsystem,
-		Name:      "hits",
+		Name:      "hits_total",
 		Help:      "Number of cache hits",
+	}, []string{metricControllerLabel})
+	cacheMisses = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Subsystem: metricCacheSubsystem,
+		Name:      "misses_total",
+		Help:      "Number of cache misses",
 	}, []string{metricControllerLabel})
 	cacheSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Subsystem: metricCacheSubsystem,
@@ -68,6 +73,7 @@ func init() {
 	metrics.Registry.MustRegister(awsCallRetries)
 	metrics.Registry.MustRegister(cacheItems)
 	metrics.Registry.MustRegister(cacheHits)
+	metrics.Registry.MustRegister(cacheMisses)
 	metrics.Registry.MustRegister(cacheSize)
 }
 
@@ -92,6 +98,7 @@ func CaptureRequestMetrics(controller string) func(r *request.Request) {
 		awsCallRetries.WithLabelValues(controller, service, operation).Observe(float64(r.RetryCount))
 		cacheItems.WithLabelValues(controller).Set(float64(dnscache.DNSOperatorCache.Len()))
 		cacheHits.WithLabelValues(controller).Set(float64(dnscache.DNSOperatorCache.Stats().Hits))
+		cacheMisses.WithLabelValues(controller).Set(float64(dnscache.DNSOperatorCache.Stats().Misses))
 		cacheSize.WithLabelValues(controller).Set(float64(dnscache.DNSOperatorCache.Capacity()))
 	}
 }
