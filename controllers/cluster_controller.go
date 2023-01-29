@@ -44,6 +44,7 @@ type ClusterReconciler struct {
 
 	BaseDomain        string
 	ManagementCluster string
+	StaticBastionIP   string
 }
 
 func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -85,6 +86,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		Cluster:               cluster,
 		InfrastructureCluster: infraCluster,
 		ManagementCluster:     r.ManagementCluster,
+		StaticBastionIP:       r.StaticBastionIP,
 	})
 	if err != nil {
 		return reconcile.Result{}, microerror.Mask(err)
