@@ -10,7 +10,7 @@ require (
 	github.com/giantswarm/micrologger v1.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.12.2
-	golang.org/x/text v0.3.7
+	golang.org/x/text v0.6.0
 	k8s.io/api v0.23.0
 	k8s.io/apimachinery v0.23.0
 	k8s.io/client-go v0.23.0
@@ -56,11 +56,11 @@ require (
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.19.1 // indirect
-	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
+	golang.org/x/net v0.5.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect
-	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
-	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
-	golang.org/x/time v0.0.0-20211116232009-f0f3c7e86c11 // indirect
+	golang.org/x/sys v0.4.0 // indirect
+	golang.org/x/term v0.4.0 // indirect
+	golang.org/x/time v0.0.0-20220922220347-f3bd1da661af // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
@@ -89,9 +89,9 @@ replace (
 replace (
 	github.com/Microsoft/hcsshim v0.8.7 => github.com/Microsoft/hcsshim v0.9.2
 	github.com/containerd/imgcrypt v1.1.1 => github.com/containerd/imgcrypt v1.1.5
-	github.com/nats-io/jwt v0.3.0 => github.com/nats-io/jwt/v2 v2.3.0
-	github.com/nats-io/jwt v0.3.2 => github.com/nats-io/jwt/v2 v2.3.0
-	github.com/nats-io/nats-server/v2 v2.1.2 => github.com/nats-io/nats-server/v2 v2.8.4
+	github.com/nats-io/jwt/v2 => github.com/nats-io/jwt/v2 v2.3.0
+	github.com/nats-io/nats-server/v2 v2.1.2 => github.com/nats-io/nats-server/v2 v2.9.11
+	github.com/nats-io/nats.go => github.com/nats-io/nats.go v1.19.0
 	github.com/opencontainers/image-spec v1.0.1 => github.com/opencontainers/image-spec v1.0.2
 	github.com/opencontainers/runc v1.0.2 => github.com/opencontainers/runc v1.1.2
 	github.com/pkg/sftp v1.10.1 => github.com/pkg/sftp v1.13.4

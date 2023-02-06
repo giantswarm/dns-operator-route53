@@ -21,6 +21,15 @@ pod:
 # provider:
 #   kind: e.g. openstack, cloud-director
 
+# Base domain for DNS records.
+baseDomain: ""
+
+# Name of management cluster. Used in comments of DNS records to track WC->MC relation.
+managementCluster: ""
+
+# IP address of bastion machine for all clusters
+staticBastionIP: ""
+
 # Add seccomp to pod security context
 podSecurityContext:
   seccompProfile:

@@ -1,7 +1,8 @@
 ---
-accessKeyID: ""
-secretAccessKey: ""
-baseDomain: ""
-managementCluster: ""
+accessKeyID: "my_aws_key"
+secretAccessKey: "my_aws_secret_access_key"
+baseDomain: "test.gigantic.io"
+managementCluster: "guppy"
+staticBastionIP: "192.168.1.2"
 provider:
-  kind: ""
+  kind: "cloud-director"

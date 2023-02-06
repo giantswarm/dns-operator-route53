@@ -6,14 +6,15 @@ import (
 
 	awsclient "github.com/aws/aws-sdk-go/aws/client"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/giantswarm/k8sclient/v6/pkg/k8sclient"
-	"github.com/giantswarm/k8sclient/v6/pkg/k8srestconfig"
-	"github.com/giantswarm/microerror"
-	"github.com/giantswarm/micrologger"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
 	capi "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/giantswarm/k8sclient/v6/pkg/k8sclient"
+	"github.com/giantswarm/k8sclient/v6/pkg/k8srestconfig"
+	"github.com/giantswarm/microerror"
+	"github.com/giantswarm/micrologger"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -30,6 +31,7 @@ type ClusterScopeParams struct {
 	Cluster               *capi.Cluster
 	InfrastructureCluster *unstructured.Unstructured
 	ManagementCluster     string
+	StaticBastionIP       string
 }
 
 // NewClusterScope creates a new Scope from the supplied parameters.
@@ -55,6 +57,7 @@ func NewClusterScope(ctx context.Context, params ClusterScopeParams) (*ClusterSc
 		cluster:           params.Cluster,
 		infraCluster:      params.InfrastructureCluster,
 		managementCluster: params.ManagementCluster,
+		staticBastionIP:   params.StaticBastionIP,
 	}, nil
 }
 
@@ -67,6 +70,7 @@ type ClusterScope struct {
 	cluster           *capi.Cluster
 	infraCluster      *unstructured.Unstructured
 	managementCluster string
+	staticBastionIP   string
 }
 
 // APIEndpoint returns the Cluster Kubernetes API endpoint.
@@ -81,6 +85,10 @@ func (s *ClusterScope) BaseDomain() string {
 
 // BastionIP returns the bastion IP.
 func (s *ClusterScope) BastionIP() string {
+
+	if s.staticBastionIP != "" {
+		return s.staticBastionIP
+	}
 
 	// define possible targets
 	openStackBastionIP, openStackBastionIPexists, _ := unstructured.NestedString(s.infraCluster.Object, "status", "bastion", "floatingIP")
