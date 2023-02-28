@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add use of the runtime/default seccomp profile.
 
+### Changed
+
+- Changed PSP to allow the same volumes as restricted, to prevent seccomp profile changes breaking pod creation.
+
 ## [0.7.0] - 2023-01-29
 
 ### Added
