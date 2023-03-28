@@ -286,15 +286,15 @@ func (s *Service) changeClusterRecords(ctx context.Context, hostedZoneID string,
 	// check if we already have entries for the supported "core" endpoints
 	// kubernetes API IP & bastion host IP
 	var endpointIPs struct {
-		kubernetesAPI bool
-		bastionIP     bool
+		kubernetesAPIRequiresUpdate bool
+		bastionIPRequiresUpdate     bool
 	}
 	for _, recordSet := range recordSets {
 		if *recordSet.Name == "api"+"."+s.scope.Name()+"."+s.scope.BaseDomain()+"." {
-			endpointIPs.kubernetesAPI = true
+			endpointIPs.kubernetesAPIRequiresUpdate = requiresUpdate(recordSet, s.scope.APIEndpoint())
 		}
 		if *recordSet.Name == "bastion1"+"."+s.scope.Name()+"."+s.scope.BaseDomain()+"." {
-			endpointIPs.bastionIP = true
+			endpointIPs.bastionIPRequiresUpdate = requiresUpdate(recordSet, s.scope.BastionIP())
 		}
 	}
 
@@ -302,11 +302,11 @@ func (s *Service) changeClusterRecords(ctx context.Context, hostedZoneID string,
 	if s.scope.APIEndpoint() == "" {
 		log.Info("API endpoint is not ready yet.")
 		return aws.ErrMissingEndpoint
-	} else if s.scope.APIEndpoint() != "" && !endpointIPs.kubernetesAPI {
+	} else if s.scope.APIEndpoint() != "" && endpointIPs.kubernetesAPIRequiresUpdate {
 		input.ChangeBatch.Changes = append(input.ChangeBatch.Changes,
 			s.buildARecordChange(hostedZoneID, "api", s.scope.APIEndpoint(), actionUpsert),
 		)
-	} else if s.scope.BastionIP() != "" && !endpointIPs.bastionIP {
+	} else if s.scope.BastionIP() != "" && endpointIPs.bastionIPRequiresUpdate {
 		input.ChangeBatch.Changes = append(input.ChangeBatch.Changes,
 			s.buildARecordChange(hostedZoneID, "bastion1", s.scope.BastionIP(), actionUpsert),
 		)
@@ -333,6 +333,22 @@ func (s *Service) changeClusterRecords(ctx context.Context, hostedZoneID string,
 	}
 
 	return nil
+}
+
+func requiresUpdate(set *route53.ResourceRecordSet, endpoint string) bool {
+	if set.ResourceRecords == nil {
+		return true
+	}
+
+	if len(set.ResourceRecords) == 0 {
+		return true
+	}
+
+	if set.ResourceRecords[0].Value == nil {
+		return true
+	}
+
+	return *set.ResourceRecords[0].Value != endpoint
 }
 
 func (s *Service) listResourceRecordSets(ctx context.Context, hostedZoneID string) (*route53.ListResourceRecordSetsOutput, error) {
