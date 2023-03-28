@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -65,7 +66,7 @@ var config = bigcache.Config{
 }
 
 func NewDNSOperatorCache() (*bigcache.BigCache, error) {
-	return bigcache.NewBigCache(config)
+	return bigcache.New(context.Background(), config)
 }
 
 func GetDNSCacheRecord(recordID int, keySuffix string) ([]byte, error) {

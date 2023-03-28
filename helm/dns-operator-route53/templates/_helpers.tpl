@@ -42,5 +42,7 @@ Kind of infra cluster according to provider type
 openstackclusters
 {{- else if eq .Values.provider.kind "cloud-director" -}}
 vcdclusters
+{{- else if eq .Values.provider.kind "vsphere" -}}
+vsphereclusters
 {{- end -}}
 {{- end -}}
