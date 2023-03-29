@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add vsphere support.
 - Add use of the runtime/default seccomp profile.
 - Push to vsphere app collection.
+- Update API Server IP and Bastion IP if current value is different from the desired one.
 
 ### Changed
 
