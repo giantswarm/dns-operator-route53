@@ -11,10 +11,11 @@ import (
 	"github.com/allegro/bigcache/v3"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/route53"
-	"github.com/giantswarm/microerror"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/giantswarm/microerror"
 
 	dnscache "github.com/giantswarm/dns-operator-route53/pkg/cloud/cache"
 )
@@ -283,18 +284,16 @@ func (s *Service) changeClusterRecords(ctx context.Context, hostedZoneID string,
 		return err
 	}
 
-	// check if we already have entries for the supported "core" endpoints
-	// kubernetes API IP & bastion host IP
-	var endpointIPs struct {
-		kubernetesAPIRequiresUpdate bool
-		bastionIPRequiresUpdate     bool
-	}
+	// check if we already have right entries for kubernetes API IP & bastion host IP
+	kubernetesAPIRequiresUpdate := true
+	bastionIPRequiresUpdate := true
+
 	for _, recordSet := range recordSets {
 		if *recordSet.Name == "api"+"."+s.scope.Name()+"."+s.scope.BaseDomain()+"." {
-			endpointIPs.kubernetesAPIRequiresUpdate = requiresUpdate(recordSet, s.scope.APIEndpoint())
+			kubernetesAPIRequiresUpdate = requiresUpdate(recordSet, s.scope.APIEndpoint())
 		}
 		if *recordSet.Name == "bastion1"+"."+s.scope.Name()+"."+s.scope.BaseDomain()+"." {
-			endpointIPs.bastionIPRequiresUpdate = requiresUpdate(recordSet, s.scope.BastionIP())
+			bastionIPRequiresUpdate = requiresUpdate(recordSet, s.scope.BastionIP())
 		}
 	}
 
@@ -302,11 +301,11 @@ func (s *Service) changeClusterRecords(ctx context.Context, hostedZoneID string,
 	if s.scope.APIEndpoint() == "" {
 		log.Info("API endpoint is not ready yet.")
 		return aws.ErrMissingEndpoint
-	} else if s.scope.APIEndpoint() != "" && endpointIPs.kubernetesAPIRequiresUpdate {
+	} else if s.scope.APIEndpoint() != "" && kubernetesAPIRequiresUpdate {
 		input.ChangeBatch.Changes = append(input.ChangeBatch.Changes,
 			s.buildARecordChange(hostedZoneID, "api", s.scope.APIEndpoint(), actionUpsert),
 		)
-	} else if s.scope.BastionIP() != "" && endpointIPs.bastionIPRequiresUpdate {
+	} else if s.scope.BastionIP() != "" && bastionIPRequiresUpdate {
 		input.ChangeBatch.Changes = append(input.ChangeBatch.Changes,
 			s.buildARecordChange(hostedZoneID, "bastion1", s.scope.BastionIP(), actionUpsert),
 		)
