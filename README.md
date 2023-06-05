@@ -4,7 +4,6 @@
 
 * `A`: `api.<clustername>.test.gigantic.io` (points to the kubernetes API IP of a `cluster`)
 * `A`: `bastion1.<clustername>.test.gigantic.io` (points to the bastion Host IP of a `cluster` - only on `OpenStack` yet)
-* `A`: `ingress.<clustername>.test.gigantic.io` (points to `kube-system/nginx-ingress-controller`)
 * `CNAME`: `*.<clustername>.test.gigantic.io` for `ingress.<clustername>.test.gigantic.io`
 
 ## reconciliation loop
@@ -106,16 +105,6 @@ By using the `aws` cli it's sometimes helpful to get the current created Route53
                "ResourceRecords": [
                    {
                        "Value": "216.119.100.100"
-                   }
-               ]
-           },
-           {
-               "Name": "ingress.<clustername>.test.gigantic.io.",
-               "Type": "A",
-               "TTL": 300,
-               "ResourceRecords": [
-                   {
-                       "Value": "216.119.100.101"
                    }
                ]
            }

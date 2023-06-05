@@ -15,8 +15,6 @@ dnsOperator -> capiCR: get controlPlaneIP
 dnsOperator -> route53: create ""DNS A record"" for controlPlaneIP ""api.<clusterName>.<baseDomain>""
 dnsOperator -> capiInfraCR: get Bastion IP if Bastion exists(only if InfraCR is OpenStack)
 dnsOperator -> route53: create ""DNS A record"" for bastion IP ""bastion1.<clusterName>.<baseDomain>""
-dnsOperator -> cluster: get ""kube-system/nginx-ingress-controller"" IP if exists
-dnsOperator -> route53: create ""DNS A record"" for ingress in ""kube-system"" (""ingress.<clusterName>.<baseDomain>"")
 dnsOperator -> route53: create ""DNS CNAME"" ""*.<clusterName>.<baseDomain>"" point to ""ingress.<clusterName>.<baseDomain>""
 
 @enduml

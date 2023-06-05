@@ -140,10 +140,7 @@ func (r *ClusterReconciler) reconcileNormal(ctx context.Context, clusterScope *s
 
 	route53Service := route53.NewService(clusterScope)
 	err := route53Service.ReconcileRoute53(ctx)
-	if route53.IsIngressNotReady(err) {
-		log.Error(err, "ingress is not ready yet, requeuing")
-		return reconcile.Result{}, microerror.Mask(err)
-	} else if err != nil {
+	if err != nil {
 		log.Error(err, "error creating route53")
 		return reconcile.Result{}, microerror.Mask(err)
 	}

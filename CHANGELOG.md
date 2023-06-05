@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- Route53: Remove `ingress` record creation. ([#112](https://github.com/giantswarm/dns-operator-route53/pull/112))
+
 ## [0.7.3] - 2023-03-31
 
 ### Fixed

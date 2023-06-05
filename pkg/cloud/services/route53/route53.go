@@ -11,8 +11,6 @@ import (
 	"github.com/allegro/bigcache/v3"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/route53"
-	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/giantswarm/microerror"
@@ -21,14 +19,9 @@ import (
 )
 
 const (
-	appNameLabelKey = "app.kubernetes.io/name"
-
-	ingressAppLabel     = "nginx-ingress-controller"
-	ingressAppNamespace = "kube-system"
-	ttl                 = 300
-
 	actionDelete = "DELETE"
 	actionUpsert = "UPSERT"
+	ttl          = 300
 )
 
 func (s *Service) DeleteRoute53(ctx context.Context) error {
@@ -124,19 +117,10 @@ func (s *Service) buildARecordChange(hostedZoneID, recordName, recordValue, acti
 }
 
 func (s *Service) changeClusterIngressRecords(ctx context.Context, hostedZoneID, action string) error {
-	ingressIP, err := s.getIngressIP(ctx)
-	if err != nil {
-		return microerror.Mask(err)
-	} else if ingressIP == "" {
-		// Ingress service is not installed in this cluster.
-		return nil
-	}
-
 	input := &route53.ChangeResourceRecordSetsInput{
 		HostedZoneId: aws.String(hostedZoneID),
 		ChangeBatch: &route53.ChangeBatch{
 			Changes: []*route53.Change{
-				s.buildARecordChange(hostedZoneID, "ingress", ingressIP, action),
 				{
 					Action: aws.String(action),
 					ResourceRecordSet: &route53.ResourceRecordSet{
@@ -156,7 +140,7 @@ func (s *Service) changeClusterIngressRecords(ctx context.Context, hostedZoneID,
 
 	cachedClusterIngressRecords, _ := dnscache.GetDNSCacheRecord(dnscache.ClusterIngressRecords, hostedZoneID)
 	if input.String() != string(cachedClusterIngressRecords) {
-		if err = dnscache.SetDNSCacheRecord(dnscache.ClusterIngressRecords, hostedZoneID, []byte(input.String())); err != nil {
+		if err := dnscache.SetDNSCacheRecord(dnscache.ClusterIngressRecords, hostedZoneID, []byte(input.String())); err != nil {
 			return err
 		}
 
@@ -471,43 +455,6 @@ func (s *Service) describeClusterHostedZone(ctx context.Context) (string, error)
 	}
 
 	return *out.HostedZones[0].Id, nil
-}
-
-func (s *Service) getIngressIP(ctx context.Context) (string, error) {
-
-	k8sClient, err := s.scope.ClusterK8sClient(ctx)
-	if err != nil {
-		return "", microerror.Mask(err)
-	}
-
-	var icServices corev1.ServiceList
-
-	err = k8sClient.List(ctx, &icServices,
-		client.InNamespace(ingressAppNamespace),
-		client.MatchingLabels{appNameLabelKey: ingressAppLabel},
-	)
-
-	if err != nil {
-		return "", microerror.Mask(err)
-	}
-
-	var icServiceIP string
-
-	for _, icService := range icServices.Items {
-		if icService.Spec.Type == corev1.ServiceTypeLoadBalancer {
-			if icServiceIP != "" {
-				return "", microerror.Mask(tooManyICServicesError)
-			}
-
-			if len(icService.Status.LoadBalancer.Ingress) < 1 || icService.Status.LoadBalancer.Ingress[0].IP == "" {
-				return "", microerror.Mask(ingressNotReadyError)
-			}
-
-			icServiceIP = icService.Status.LoadBalancer.Ingress[0].IP
-		}
-	}
-
-	return icServiceIP, nil
 }
 
 func (s *Service) listClusterNSRecords(ctx context.Context, hostedZoneID string) ([]*route53.ResourceRecord, error) {
