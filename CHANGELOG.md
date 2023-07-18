@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Respect new `ingress-nginx` app in addition to existing `nginx-ingress-controller` app.
+
 ## [0.7.3] - 2023-03-31
 
 ### Fixed

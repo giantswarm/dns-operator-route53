@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/route53"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -21,11 +22,10 @@ import (
 )
 
 const (
-	appNameLabelKey = "app.kubernetes.io/name"
+	ingressServiceSelector = "app.kubernetes.io/name in (ingress-nginx,nginx-ingress-controller)"
+	ingressAppNamespace    = "kube-system"
 
-	ingressAppLabel     = "nginx-ingress-controller"
-	ingressAppNamespace = "kube-system"
-	ttl                 = 300
+	ttl = 300
 
 	actionDelete = "DELETE"
 	actionUpsert = "UPSERT"
@@ -484,7 +484,7 @@ func (s *Service) getIngressIP(ctx context.Context) (string, error) {
 
 	err = k8sClient.List(ctx, &icServices,
 		client.InNamespace(ingressAppNamespace),
-		client.MatchingLabels{appNameLabelKey: ingressAppLabel},
+		&client.ListOptions{Raw: &metav1.ListOptions{LabelSelector: ingressServiceSelector}},
 	)
 
 	if err != nil {
