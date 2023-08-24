@@ -51,10 +51,9 @@ spec:
             {{- . | toYaml | nindent 10 }}
           {{- end }}
         resources:
-          requests:
-            memory: 100Mi
-          limits:
-            memory: 100Mi
+          {{- with .Values.pod.resources }}
+            {{- . | toYaml | nindent 10 }}
+          {{- end }}
         volumeMounts:
         - mountPath: /home/.aws
           name: credentials

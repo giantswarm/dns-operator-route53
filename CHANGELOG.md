@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Ignore CVE-2023-3978.
 - Fix security issues reported by kyverno policies.
+- Make resource configuration configurable and increase default memory usage to 120Mi.
+
 
 ## [0.8.0] - 2023-07-18
 
