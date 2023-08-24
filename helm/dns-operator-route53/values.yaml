@@ -16,6 +16,11 @@ pod:
     id: 1000
   group:
     id: 1000
+  resources:
+    limits:
+      memory: 120Mi
+    requests:
+      memory: 120Mi
 
 # necessary for RBACs
 # provider:
