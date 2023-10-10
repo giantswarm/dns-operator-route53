@@ -46,10 +46,10 @@ spec:
         - name: metrics
           containerPort: 8080
           protocol: TCP
+        {{- with .Values.containerSecurityContext }}
         securityContext:
-          {{- with .Values.securityContext }}
-            {{- . | toYaml | nindent 10 }}
-          {{- end }}
+          {{- . | toYaml | nindent 10 }}
+        {{- end }}
         resources:
           {{- with .Values.pod.resources }}
             {{- . | toYaml | nindent 10 }}
