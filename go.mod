@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/allegro/bigcache/v3 v3.1.0
-	github.com/aws/aws-sdk-go v1.45.24
+	github.com/aws/aws-sdk-go v1.46.0
 	github.com/giantswarm/k8sclient/v7 v7.0.1
 	github.com/giantswarm/microerror v0.4.0
 	github.com/giantswarm/micrologger v1.0.0
@@ -91,7 +91,7 @@ replace (
 	github.com/containerd/imgcrypt v1.1.1 => github.com/containerd/imgcrypt v1.1.5
 	github.com/nats-io/jwt/v2 => github.com/nats-io/jwt/v2 v2.5.2
 	github.com/nats-io/nats-server/v2 v2.1.2 => github.com/nats-io/nats-server/v2 v2.9.11
-	github.com/nats-io/nats.go => github.com/nats-io/nats.go v1.30.2
+	github.com/nats-io/nats.go => github.com/nats-io/nats.go v1.31.0
 	github.com/opencontainers/image-spec v1.0.1 => github.com/opencontainers/image-spec v1.0.2
 	github.com/opencontainers/runc v1.0.2 => github.com/opencontainers/runc v1.1.2
 	github.com/pkg/sftp v1.10.1 => github.com/pkg/sftp v1.13.4
