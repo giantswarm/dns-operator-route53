@@ -58,8 +58,8 @@ require (
 	go.uber.org/zap v1.19.1 // indirect
 	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/oauth2 v0.8.0 // indirect
-	golang.org/x/sys v0.11.0 // indirect
-	golang.org/x/term v0.8.0 // indirect
+	golang.org/x/sys v0.13.0 // indirect
+	golang.org/x/term v0.13.0 // indirect
 	golang.org/x/time v0.0.0-20220922220347-f3bd1da661af // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
@@ -95,6 +95,6 @@ replace (
 	github.com/opencontainers/image-spec v1.0.1 => github.com/opencontainers/image-spec v1.0.2
 	github.com/opencontainers/runc v1.0.2 => github.com/opencontainers/runc v1.1.2
 	github.com/pkg/sftp v1.10.1 => github.com/pkg/sftp v1.13.4
-	golang.org/x/net v0.5.0 => golang.org/x/net v0.7.0
+	golang.org/x/net => golang.org/x/net v0.17.0
 	golang.org/x/text v0.3.6 => golang.org/x/text v0.3.7
 )
