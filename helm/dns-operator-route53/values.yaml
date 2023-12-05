@@ -9,7 +9,7 @@ image:
   name: "giantswarm/dns-operator-route53"
   tag: "[[ .Version ]]"
 registry:
-  domain: docker.io
+  domain: gsoci.azurecr.io
 
 pod:
   user:
