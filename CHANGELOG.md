@@ -7,10 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Chnaged
-- Align PSS (deploy PSPs conditionally).
 ### Changed
 
+- Align PSS (deploy PSPs conditionally).
 - Configure `gsoci.azurecr.io` as the default container image registry.
 
 ## [0.8.1] - 2023-08-24
