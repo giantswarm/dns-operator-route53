@@ -3,14 +3,14 @@ kind: PodMonitor
 metadata:
   labels:
     {{- include "labels.common" . | nindent 4 }}
-  name: dns-operator-route53
-  namespace: giantswarm
+  name: {{ include "resource.default.name"  . }}
+  namespace: {{ include "resource.default.namespace"  . }}
 spec:
   namespaceSelector:
     matchNames:
-    - giantswarm
+    - {{ include "resource.default.namespace" . }}
   podMetricsEndpoints:
-  - targetPort: 8080
+  - port: metrics
   selector:
     matchLabels:
-      {{- include "labels.selector" . | nindent 6}}
+      {{- include "labels.selector" . | nindent 6 }}

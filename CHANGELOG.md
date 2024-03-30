@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix missing team label on all resources.
+
 ## [0.8.2] - 2023-12-19
 
 ### Changed
