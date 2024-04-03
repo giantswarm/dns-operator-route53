@@ -87,6 +87,6 @@ replace (
 replace (
 	github.com/golang/protobuf => github.com/golang/protobuf v1.5.4 // CVE-2024-24786
 	github.com/pkg/sftp v1.10.1 => github.com/pkg/sftp v1.13.4
-	golang.org/x/net => golang.org/x/net v0.22.0
+	golang.org/x/net => golang.org/x/net v0.23.0
 	golang.org/x/text v0.3.6 => golang.org/x/text v0.3.7
 )
