@@ -10,7 +10,7 @@ require (
 	github.com/giantswarm/micrologger v1.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.19.1
-	golang.org/x/text v0.15.0
+	golang.org/x/text v0.16.0
 	k8s.io/api v0.23.0
 	k8s.io/apimachinery v0.23.0
 	k8s.io/client-go v0.23.0
@@ -55,10 +55,10 @@ require (
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
 	go.uber.org/zap v1.19.1 // indirect
-	golang.org/x/net v0.21.0 // indirect
+	golang.org/x/net v0.25.0 // indirect
 	golang.org/x/oauth2 v0.16.0 // indirect
-	golang.org/x/sys v0.20.0 // indirect
-	golang.org/x/term v0.20.0 // indirect
+	golang.org/x/sys v0.22.0 // indirect
+	golang.org/x/term v0.22.0 // indirect
 	golang.org/x/time v0.0.0-20220922220347-f3bd1da661af // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
@@ -87,6 +87,6 @@ replace (
 replace (
 	github.com/golang/protobuf => github.com/golang/protobuf v1.5.4 // CVE-2024-24786
 	github.com/pkg/sftp v1.10.1 => github.com/pkg/sftp v1.13.4
-	golang.org/x/net => golang.org/x/net v0.25.0
+	golang.org/x/net => golang.org/x/net v0.27.0
 	golang.org/x/text v0.3.6 => golang.org/x/text v0.3.7
 )
