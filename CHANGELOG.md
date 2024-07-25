@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2024-07-25
+
 ### Changed
 
 - Upgrade `k8s.io/api`, `k8s.io/apimachinery` and `k8s.io/client-go` from `0.23.0` to `0.29.2`
@@ -172,7 +174,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Create api and ingress entries in Route53.
 
-[Unreleased]: https://github.com/giantswarm/dns-operator-route53/compare/v0.8.3...HEAD
+[Unreleased]: https://github.com/giantswarm/dns-operator-route53/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/giantswarm/dns-operator-route53/compare/v0.8.3...v0.9.0
 [0.8.3]: https://github.com/giantswarm/dns-operator-route53/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/giantswarm/dns-operator-route53/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/giantswarm/dns-operator-route53/compare/v0.8.0...v0.8.1
