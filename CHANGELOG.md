@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade `k8s.io/api`, `k8s.io/apimachinery` and `k8s.io/client-go` from `0.23.0` to `0.29.2`
+- Upgrade `sigs.k8s.io/cluster-api` from `1.1.3` to `1.6.5`
+- Upgrade `sigs.k8s.io/controller-runtime` from `0.11.1` to `0.17.3`
+
 ## [0.8.3] - 2024-04-01
 
 ### Fixed
