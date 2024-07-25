@@ -71,7 +71,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return reconcile.Result{}, microerror.Mask(err)
 	}
 
-	log.WithValues("infrastructure cluster", infraCluster.GetClusterName())
+	log.WithValues("infrastructure cluster", infraCluster.GetName())
 	log.WithValues("infrastructure group", infraCluster.GroupVersionKind().Group, "infrastructure kind", infraCluster.GroupVersionKind().Kind, "infrastructure version", infraCluster.GroupVersionKind().Version)
 
 	// Return early if the core or infrastructure cluster is paused.
