@@ -12,7 +12,7 @@ require (
 	github.com/giantswarm/micrologger v1.1.1
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.19.1
-	golang.org/x/text v0.16.0
+	golang.org/x/text v0.17.0
 	k8s.io/api v0.29.2
 	k8s.io/apimachinery v0.29.2
 	k8s.io/client-go v0.29.2
