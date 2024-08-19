@@ -64,6 +64,12 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// get the InfrastructureRef (v1.ObjectReference) from the CAPI cluster
 	infraRef := cluster.Spec.InfrastructureRef
 
+	// Return early if the infrastructure cluster type is not enabled
+	if !r.enabledInfrastructureProvider(infraRef.Kind) {
+		log.Info(fmt.Sprintf("Infrastructure provider %s is not enabled", infraRef.Kind))
+		return reconcile.Result{}, nil
+	}
+
 	// set the GVK to the unstructured infraCluster
 	infraCluster.SetGroupVersionKind(infraRef.GroupVersionKind())
 
@@ -187,4 +193,16 @@ func (r *ClusterReconciler) reconcileDelete(ctx context.Context, clusterScope *s
 		Requeue:      true,
 		RequeueAfter: time.Minute * 5,
 	}, nil
+}
+
+// check if the infrastructure provider is enabled
+// for now we simply disable the AWS provider here.
+// if needed in the future we should extend this to accept a list of enabled providers from the config.
+func (r *ClusterReconciler) enabledInfrastructureProvider(kind string) bool {
+	switch kind {
+	case "AWSCluster":
+		return false
+	default:
+		return true
+	}
 }
