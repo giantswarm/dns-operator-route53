@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Do not reconcile Cluster if the infrastructure cluster kind is AWSCluster.
+
 ## [0.9.0] - 2024-07-25
 
 ### Changed
