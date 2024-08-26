@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.2] - 2024-08-26
+
 ### Added
 
 - Add rbac rule for operator to access infraClusters on CAPA.
@@ -184,7 +186,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Create api and ingress entries in Route53.
 
-[Unreleased]: https://github.com/giantswarm/dns-operator-route53/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/giantswarm/dns-operator-route53/compare/v0.9.2...HEAD
+[0.9.2]: https://github.com/giantswarm/dns-operator-route53/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/giantswarm/dns-operator-route53/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/giantswarm/dns-operator-route53/compare/v0.8.3...v0.9.0
 [0.8.3]: https://github.com/giantswarm/dns-operator-route53/compare/v0.8.2...v0.8.3
