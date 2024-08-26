@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add rbac rule for operator to access infraClusters on CAPA.
+
 ## [0.9.1] - 2024-08-19
 
 ### Changed
