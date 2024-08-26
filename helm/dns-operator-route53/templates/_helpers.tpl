@@ -45,5 +45,7 @@ openstackclusters
 vcdclusters
 {{- else if eq .Values.provider.kind "vsphere" -}}
 vsphereclusters
+{{- else if eq .Values.provider.kind "capa" -}}
+vsphereclusters
 {{- end -}}
 {{- end -}}
