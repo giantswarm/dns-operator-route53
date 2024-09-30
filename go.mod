@@ -11,7 +11,7 @@ require (
 	github.com/giantswarm/microerror v0.4.1
 	github.com/giantswarm/micrologger v1.1.1
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.20.2
+	github.com/prometheus/client_golang v1.20.4
 	golang.org/x/text v0.18.0
 	k8s.io/api v0.31.0
 	k8s.io/apimachinery v0.31.0
