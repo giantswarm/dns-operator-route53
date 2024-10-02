@@ -4,8 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/aws/aws-sdk-go/aws"
 	awsclient "github.com/aws/aws-sdk-go/aws/client"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/sts"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
 	capi "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -31,6 +34,7 @@ type ClusterScopeParams struct {
 	Cluster               *capi.Cluster
 	InfrastructureCluster *unstructured.Unstructured
 	ManagementCluster     string
+	RoleArn               string
 	StaticBastionIP       string
 }
 
@@ -50,9 +54,36 @@ func NewClusterScope(ctx context.Context, params ClusterScopeParams) (*ClusterSc
 		return nil, microerror.Mask(err)
 	}
 
-	return &ClusterScope{
-		session: awsSession,
+	if params.RoleArn != "" {
+		// Assume Role
+		stsSvc := sts.New(awsSession)
 
+		assumeRoleOutput, err := stsSvc.AssumeRole(&sts.AssumeRoleInput{
+			RoleArn:         aws.String(params.RoleArn),
+			RoleSessionName: aws.String("MyClusterOperatorSession"),
+		})
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+
+		// Use the temporary credentials from the AssumeRole response
+		creds := credentials.NewStaticCredentials(
+			*assumeRoleOutput.Credentials.AccessKeyId,
+			*assumeRoleOutput.Credentials.SecretAccessKey,
+			*assumeRoleOutput.Credentials.SessionToken,
+		)
+
+		// Create a new session with the assumed role credentials
+		awsSession, err = session.NewSession(&aws.Config{
+			Credentials: creds,
+		})
+		if err != nil {
+			return nil, microerror.Mask(err)
+		}
+	}
+
+	return &ClusterScope{
+		session:           awsSession,
 		baseDomain:        params.BaseDomain,
 		cluster:           params.Cluster,
 		infraCluster:      params.InfrastructureCluster,

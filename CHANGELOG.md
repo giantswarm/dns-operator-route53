@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add optional `--role-arn` flag to specify the role ARN to assume when interacting with Route53.
+
 ## [0.9.2] - 2024-08-26
 
 ### Added
