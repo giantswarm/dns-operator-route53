@@ -39,6 +39,9 @@ spec:
         - --enable-leader-election
         - --base-domain={{ .Values.baseDomain }}
         - --management-cluster={{ .Values.managementCluster }}
+        {{ if .Values.aws.roleARN -}}
+        - --role-arn={{ .Values.aws.roleARN }}
+        {{- end }}
         {{ if .Values.staticBastionIP -}}
         - --static-bastion-ip={{ .Values.staticBastionIP }}
         {{- end }}

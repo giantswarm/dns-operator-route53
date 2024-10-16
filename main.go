@@ -52,6 +52,7 @@ func main() {
 		enableLeaderElection bool
 		managementCluster    string
 		metricsAddr          string
+		roleArn              string
 		staticBastionIP      string
 	)
 
@@ -62,6 +63,7 @@ func main() {
 
 	flag.StringVar(&baseDomain, "base-domain", "", "Domain for which to create the DNS entries, e.g. customer.gigantic.io.")
 	flag.StringVar(&managementCluster, "management-cluster", "", "Name of the management cluster.")
+	flag.StringVar(&roleArn, "role-arn", "", "ARN of the role to assume for the AWS API calls.")
 	flag.StringVar(&staticBastionIP, "static-bastion-ip", "", "IP address of static bastion machine for all clusters.")
 
 	flag.Parse()
@@ -93,6 +95,7 @@ func main() {
 		Client:            mgr.GetClient(),
 		BaseDomain:        baseDomain,
 		ManagementCluster: managementCluster,
+		RoleArn:           roleArn,
 		StaticBastionIP:   staticBastionIP,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Cluster")
