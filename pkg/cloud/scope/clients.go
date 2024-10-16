@@ -1,9 +1,7 @@
 package scope
 
 import (
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/route53"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -21,7 +19,7 @@ type AWSClients struct {
 
 // NewRoute53Client creates a new Route53 API client for a given session
 func NewRoute53Client(session cloud.Session, target runtime.Object) *route53.Route53 {
-	Route53Client := route53.New(session.Session(), &aws.Config{Credentials: credentials.NewSharedCredentials("", "")})
+	Route53Client := route53.New(session.Session(), nil)
 	Route53Client.Handlers.Build.PushFrontNamed(getUserAgentHandler())
 	Route53Client.Handlers.CompleteAttempt.PushFront(awsmetrics.CaptureRequestMetrics("dns-operator-route53"))
 	Route53Client.Handlers.Complete.PushBack(recordAWSPermissionsIssue(target))
