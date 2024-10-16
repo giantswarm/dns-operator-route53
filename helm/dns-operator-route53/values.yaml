@@ -1,6 +1,7 @@
 aws:
   accessKeyID: accesskey
   secretAccessKey: secretkey
+  roleARN: ""
 
 project:
   branch: "[[ .Branch ]]"
@@ -31,9 +32,6 @@ baseDomain: ""
 
 # Name of management cluster. Used in comments of DNS records to track WC->MC relation.
 managementCluster: ""
-
-# Role ARN to assume for AWS API calls
-roleARN: ""
 
 # IP address of bastion machine for all clusters
 staticBastionIP: ""

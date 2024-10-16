@@ -1,6 +1,26 @@
 # dns-operator-route53
 
-`dns-operator-route53` is a controller, which runs once per management Cluster. It's responsible for creating the following DNS Records per `cluster`:
+`dns-operator-route53` is a controller, which runs once per management Cluster and watches for `Cluster` resources. It creates DNS records in Route53 for each `Cluster` in the management Cluster.
+
+## credentials
+
+`dns-operator-route53` has to communicate with AWS Route53 API.
+Therefore it needs to be configured with a set of AWS IAM credentials.
+
+```yaml
+aws:
+  accessKeyID: accesskey # AWS Access Key ID for the IAM user
+  secretAccessKey: secretkey # AWS Secret Access Key for the IAM user
+  roleARN: "" # AWS Role ARN for the IAM role to assume - optional but recommended
+```
+
+The `roleARN` is optional but recommended.
+If it is set, the operator will assume the role before interacting with Route53 using a set of temporary credentials.
+In this case, the IAM user is only used to assume the role and does not need to have any permissions to interact with Route53.
+
+## dns records
+
+`dns-operator-route53` is responsible for creating the following DNS Records per `cluster`:
 
 * `A`: `api.<clustername>.test.gigantic.io` (points to the kubernetes API IP of a `cluster`)
 * `A`: `bastion1.<clustername>.test.gigantic.io` (points to the bastion Host IP of a `cluster` - only on `OpenStack` yet)
