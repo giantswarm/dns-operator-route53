@@ -60,7 +60,7 @@ func NewClusterScope(ctx context.Context, params ClusterScopeParams) (*ClusterSc
 
 		assumeRoleOutput, err := stsSvc.AssumeRole(&sts.AssumeRoleInput{
 			RoleArn:         aws.String(params.RoleArn),
-			RoleSessionName: aws.String("MyClusterOperatorSession"),
+			RoleSessionName: aws.String(fmt.Sprintf("dns-operator-route53-%s-%s", params.ManagementCluster, params.Cluster.GetName())),
 		})
 		if err != nil {
 			return nil, microerror.Mask(err)
