@@ -7,8 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [10.0.1] - 2024-11-11
-
 ### Fixed
 
 - Ensure role ARN is added to secret if it is available.
