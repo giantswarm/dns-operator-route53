@@ -83,3 +83,15 @@ workflows:
             ignore: /.*/
           tags:
             only: /^v.*/
+    - architect/push-to-app-collection:
+        context: architect
+        name: push-to-proxmox-app-collection
+        app_name: dns-operator-route53
+        app_collection_repo: proxmox-app-collection
+        requires:
+        - push-to-app-catalog
+        filters:
+          branches:
+            ignore: /.*/
+          tags:
+            only: /^v.*/
