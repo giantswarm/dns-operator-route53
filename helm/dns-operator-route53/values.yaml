@@ -1,6 +1,8 @@
+serviceType: managed
+
 aws:
-  accessKeyID: accesskey
-  secretAccessKey: secretkey
+  accessKeyID: ""
+  secretAccessKey: ""
   roleARN: ""
 
 project:
