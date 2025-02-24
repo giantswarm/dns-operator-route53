@@ -9,7 +9,7 @@ require (
 	github.com/aws/aws-sdk-go v1.55.5
 	github.com/giantswarm/k8sclient/v8 v8.0.0
 	github.com/giantswarm/microerror v0.4.1
-	github.com/giantswarm/micrologger v1.1.1
+	github.com/giantswarm/micrologger v1.1.2
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.21.0
 	golang.org/x/text v0.21.0
