@@ -13,10 +13,10 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.21.1
 	golang.org/x/text v0.23.0
-	k8s.io/api v0.32.2
-	k8s.io/apimachinery v0.32.2
-	k8s.io/client-go v0.32.2
-	k8s.io/component-base v0.32.2
+	k8s.io/api v0.32.3
+	k8s.io/apimachinery v0.32.3
+	k8s.io/client-go v0.32.3
+	k8s.io/component-base v0.32.3
 	sigs.k8s.io/cluster-api v1.8.5
 	sigs.k8s.io/controller-runtime v0.20.3
 )
