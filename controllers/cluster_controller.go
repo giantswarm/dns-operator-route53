@@ -25,7 +25,6 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"sigs.k8s.io/cluster-api/api/v1beta1"
 	capi "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
@@ -52,7 +51,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	log := log.FromContext(ctx)
 	log.WithValues("cluster", req.NamespacedName)
 
-	cluster, err := util.GetClusterByName(ctx, r.Client, req.Namespace, req.Name)
+	cluster, err := util.GetClusterByName(ctx, r, req.Namespace, req.Name)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
@@ -74,7 +73,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// set the GVK to the unstructured infraCluster
 	infraCluster.SetGroupVersionKind(infraRef.GroupVersionKind())
 
-	if err := r.Client.Get(ctx, req.NamespacedName, infraCluster); err != nil {
+	if err := r.Get(ctx, req.NamespacedName, infraCluster); err != nil {
 		return reconcile.Result{}, microerror.Mask(err)
 	}
 
@@ -141,7 +140,7 @@ func (r *ClusterReconciler) reconcileNormal(ctx context.Context, clusterScope *s
 
 	// If a cluster isn't provisioned we don't need to reconcile it
 	// as not all information for creating DNS records are available yet.
-	if cluster.Status.Phase != string(v1beta1.ClusterPhaseProvisioned) {
+	if cluster.Status.Phase != string(capi.ClusterPhaseProvisioned) {
 		log.Info(fmt.Sprintf("Requeuing cluster %s - phase %s, ", cluster.Name, cluster.Status.Phase))
 		return ctrl.Result{RequeueAfter: 2 * time.Minute}, nil
 	}
