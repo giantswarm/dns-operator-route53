@@ -2,7 +2,7 @@ module github.com/giantswarm/dns-operator-route53
 
 go 1.24.0
 
-toolchain go1.25.4
+toolchain go1.25.5
 
 require (
 	github.com/allegro/bigcache/v3 v3.1.0
