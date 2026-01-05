@@ -1,0 +1,118 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "properties": {
+    "aws": {
+      "type": "object",
+      "properties": {
+        "accessKeyID": {
+          "type": "string"
+        },
+        "secretAccessKey": {
+          "type": "string"
+        },
+        "roleARN": {
+          "type": "string"
+        }
+      }
+    },
+    "image": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        }
+      }
+    },
+    "registry": {
+      "type": "object",
+      "properties": {
+        "domain": {
+          "type": "string"
+        }
+      }
+    },
+    "pod": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer"
+            }
+          }
+        },
+        "group": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer"
+            }
+          }
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "limits": {
+              "type": "object",
+              "properties": {
+                "memory": {
+                  "type": "string"
+                }
+              }
+            },
+            "requests": {
+              "type": "object",
+              "properties": {
+                "memory": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "provider": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string"
+        }
+      }
+    },
+    "baseDomain": {
+      "type": "string"
+    },
+    "managementCluster": {
+      "type": "string"
+    },
+    "staticBastionIP": {
+      "type": "string"
+    },
+    "podSecurityContext": {
+      "type": "object"
+    },
+    "containerSecurityContext": {
+      "type": "object"
+    },
+    "global": {
+      "type": "object",
+      "properties": {
+        "podSecurityStandards": {
+          "type": "object",
+          "properties": {
+            "enforced": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
