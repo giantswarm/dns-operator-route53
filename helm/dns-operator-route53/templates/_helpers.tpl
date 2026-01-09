@@ -19,8 +19,6 @@ Common labels
 {{- define "labels.common" -}}
 app: {{ include "name" . | quote }}
 {{ include "labels.selector" . }}
-app.giantswarm.io/branch: {{ .Values.project.branch | quote }}
-app.giantswarm.io/commit: {{ .Values.project.commit | quote }}
 application.giantswarm.io/team: {{ index .Chart.Annotations "application.giantswarm.io/team" | quote }}
 app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
@@ -34,6 +32,17 @@ Selector labels
 app.kubernetes.io/name: {{ include "name" . | quote }}
 app.kubernetes.io/instance: {{ .Release.Name | quote }}
 {{- end -}}
+
+{{/*
+Image tag helper
+*/}}
+{{- define "image.tag" -}}
+{{- if .Values.image.tag }}
+{{- .Values.image.tag }}
+{{- else }}
+{{- .Chart.Version }}
+{{- end }}
+{{- end }}
 
 {{/*
 Kind of infra cluster according to provider type
