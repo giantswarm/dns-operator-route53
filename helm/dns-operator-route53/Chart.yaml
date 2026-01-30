@@ -1,7 +1,7 @@
 apiVersion: v2
 name: dns-operator-route53
-version: 0.10.2-dev
-appVersion: 0.10.2-dev
+version: 0.10.2
+appVersion: 0.10.2
 description: "Operator for managing DNS zones and records for CAPO clusters"
 home: "https://github.com/giantswarm/dns-operator-route53"
 icon: https://s.giantswarm.io/app-icons/giantswarm/1/dark.svg
