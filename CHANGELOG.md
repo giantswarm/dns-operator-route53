@@ -7,8 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
+## [0.10.2] - 2026-01-30
 
+### Changed
+- Build with up-to-date pipelines.
 - Migrate to App Build Suite (ABS).
 
 ## [0.10.1] - 2024-11-11
@@ -202,7 +204,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Create api and ingress entries in Route53.
 
-[Unreleased]: https://github.com/giantswarm/dns-operator-route53/compare/v0.10.1...HEAD
+[Unreleased]: https://github.com/giantswarm/dns-operator-route53/compare/v0.10.2...HEAD
+[0.10.2]: https://github.com/giantswarm/dns-operator-route53/compare/v0.10.1...v0.10.2
 [0.10.1]: https://github.com/giantswarm/dns-operator-route53/compare/v10.0.1...v0.10.1
 [10.0.1]: https://github.com/giantswarm/dns-operator-route53/compare/v0.10.0...v10.0.1
 [0.10.0]: https://github.com/giantswarm/dns-operator-route53/compare/v0.9.2...v0.10.0
