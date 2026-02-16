@@ -6,6 +6,5 @@ description: "Operator for managing DNS zones and records for CAPO clusters"
 home: "https://github.com/giantswarm/dns-operator-route53"
 icon: https://s.giantswarm.io/app-icons/giantswarm/1/dark.svg
 annotations:
-  application.giantswarm.io/team: "rocket"
   io.giantswarm.application.team: "rocket"
   config.giantswarm.io/version: 1.x.x
