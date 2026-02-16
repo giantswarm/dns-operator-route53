@@ -7,10 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Chanaged
+### Changed
 
 - Calculate image tag from appVersion field.
 - Switch labels to opencontainers format.
+- Update `cluster-api` to v1.12.2.
 
 ## [0.10.2] - 2026-01-30
 

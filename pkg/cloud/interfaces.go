@@ -5,7 +5,7 @@ import (
 
 	awsclient "github.com/aws/aws-sdk-go/aws/client"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	capi "sigs.k8s.io/cluster-api/api/v1beta1"
+	capi "sigs.k8s.io/cluster-api/api/core/v1beta1"
 	"sigs.k8s.io/cluster-api/util/conditions"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

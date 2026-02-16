@@ -11,7 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/sts"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
-	capi "sigs.k8s.io/cluster-api/api/v1beta1"
+	capi "sigs.k8s.io/cluster-api/api/core/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/giantswarm/k8sclient/v8/pkg/k8sclient"
