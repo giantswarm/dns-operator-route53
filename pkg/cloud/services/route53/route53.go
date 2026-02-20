@@ -25,11 +25,21 @@ const (
 	ingressServiceSelector = "app.kubernetes.io/name in (ingress-nginx,nginx-ingress-controller)"
 	ingressAppNamespace    = "kube-system"
 
+	gatewayNamespace              = "envoy-gateway-system"
+	externalDNSManagedAnnotation  = "giantswarm.io/external-dns"
+	externalDNSManagedValue       = "managed"
+	externalDNSHostnameAnnotation = "external-dns.alpha.kubernetes.io/hostname"
+
 	ttl = 300
 
 	actionDelete = "DELETE"
 	actionUpsert = "UPSERT"
 )
+
+type gatewayService struct {
+	hostname string
+	ip       string
+}
 
 func (s *Service) DeleteRoute53(ctx context.Context) error {
 
@@ -101,6 +111,10 @@ func (s *Service) ReconcileRoute53(ctx context.Context) error {
 	}
 
 	if err := s.changeClusterIngressRecords(ctx, string(cachedHostedZoneID), actionUpsert); err != nil {
+		return microerror.Mask(err)
+	}
+
+	if err := s.changeClusterGatewayRecords(ctx, string(cachedHostedZoneID), actionUpsert); err != nil {
 		return microerror.Mask(err)
 	}
 
@@ -508,6 +522,85 @@ func (s *Service) getIngressIP(ctx context.Context) (string, error) {
 	}
 
 	return icServiceIP, nil
+}
+
+func (s *Service) getGatewayServices(ctx context.Context) ([]gatewayService, error) {
+	k8sClient, err := s.scope.ClusterK8sClient(ctx)
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+
+	var services corev1.ServiceList
+	if err = k8sClient.List(ctx, &services, client.InNamespace(gatewayNamespace)); err != nil {
+		return nil, microerror.Mask(err)
+	}
+
+	var result []gatewayService
+	for _, svc := range services.Items {
+		if svc.Annotations[externalDNSManagedAnnotation] != externalDNSManagedValue {
+			continue
+		}
+		hostname, ok := svc.Annotations[externalDNSHostnameAnnotation]
+		if !ok || hostname == "" {
+			continue
+		}
+		if svc.Spec.Type != corev1.ServiceTypeLoadBalancer {
+			continue
+		}
+		if len(svc.Status.LoadBalancer.Ingress) < 1 || svc.Status.LoadBalancer.Ingress[0].IP == "" {
+			continue
+		}
+		result = append(result, gatewayService{
+			hostname: hostname,
+			ip:       svc.Status.LoadBalancer.Ingress[0].IP,
+		})
+	}
+
+	return result, nil
+}
+
+func (s *Service) changeClusterGatewayRecords(ctx context.Context, hostedZoneID, action string) error {
+	gateways, err := s.getGatewayServices(ctx)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+	if len(gateways) == 0 {
+		return nil
+	}
+
+	var changes []*route53.Change
+	for _, gw := range gateways {
+		changes = append(changes, &route53.Change{
+			Action: aws.String(action),
+			ResourceRecordSet: &route53.ResourceRecordSet{
+				Name: aws.String(gw.hostname),
+				Type: aws.String("A"),
+				TTL:  aws.Int64(ttl),
+				ResourceRecords: []*route53.ResourceRecord{
+					{Value: aws.String(gw.ip)},
+				},
+			},
+		})
+	}
+
+	input := &route53.ChangeResourceRecordSetsInput{
+		HostedZoneId: aws.String(hostedZoneID),
+		ChangeBatch: &route53.ChangeBatch{
+			Changes: changes,
+		},
+	}
+
+	cachedGatewayRecords, _ := dnscache.GetDNSCacheRecord(dnscache.ClusterGatewayRecords, hostedZoneID)
+	if input.String() != string(cachedGatewayRecords) {
+		if err = dnscache.SetDNSCacheRecord(dnscache.ClusterGatewayRecords, hostedZoneID, []byte(input.String())); err != nil {
+			return err
+		}
+		if _, err := s.Route53Client.ChangeResourceRecordSetsWithContext(ctx, input); err != nil {
+			return wrapRoute53Error(err)
+		}
+	}
+
+	return nil
 }
 
 func (s *Service) listClusterNSRecords(ctx context.Context, hostedZoneID string) ([]*route53.ResourceRecord, error) {

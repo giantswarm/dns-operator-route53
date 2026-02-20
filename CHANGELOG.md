@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Create A records for services in `envoy-gateway-system` namespace annotated with `giantswarm.io/external-dns: managed`, using the hostname from `external-dns.alpha.kubernetes.io/hostname`.
+
 ## [0.10.3] - 2026-02-17
 
 ### Chanaged
