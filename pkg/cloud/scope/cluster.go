@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sts"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/rest"
 	capi "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -19,7 +20,7 @@ import (
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/micrologger"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"github.com/giantswarm/dns-operator-route53/pkg/key"
 )
 
 const (
@@ -168,6 +169,13 @@ func (s *ClusterScope) ClusterDomain() string {
 // Name returns the cluster name.
 func (s *ClusterScope) Name() string {
 	return s.cluster.Name
+}
+
+// WildcardCNAMETarget returns the override value for the wildcard CNAME record
+// from the dns-operator-route53.giantswarm.io/wildcard-cname-target annotation,
+// or empty string if not set.
+func (s *ClusterScope) WildcardCNAMETarget() string {
+	return s.cluster.Annotations[key.AnnotationWildcardCNAMETarget]
 }
 
 // Session returns the AWS SDK session. Used for creating cluster client.

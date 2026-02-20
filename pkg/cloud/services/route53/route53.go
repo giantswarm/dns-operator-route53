@@ -146,6 +146,11 @@ func (s *Service) changeClusterIngressRecords(ctx context.Context, hostedZoneID,
 		return nil
 	}
 
+	wildcardCNAMETarget := s.scope.WildcardCNAMETarget()
+	if wildcardCNAMETarget == "" {
+		wildcardCNAMETarget = fmt.Sprintf("ingress.%s", s.scope.ClusterDomain())
+	}
+
 	input := &route53.ChangeResourceRecordSetsInput{
 		HostedZoneId: aws.String(hostedZoneID),
 		ChangeBatch: &route53.ChangeBatch{
@@ -159,7 +164,7 @@ func (s *Service) changeClusterIngressRecords(ctx context.Context, hostedZoneID,
 						TTL:  aws.Int64(300),
 						ResourceRecords: []*route53.ResourceRecord{
 							{
-								Value: aws.String(fmt.Sprintf("ingress.%s", s.scope.ClusterDomain())),
+								Value: aws.String(wildcardCNAMETarget),
 							},
 						},
 					},

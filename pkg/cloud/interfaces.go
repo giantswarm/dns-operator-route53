@@ -43,4 +43,7 @@ type ClusterScoper interface {
 	ManagementCluster() string
 	// Name returns the CAPI cluster name.
 	Name() string
+	// WildcardCNAMETarget returns the override value for the wildcard CNAME record,
+	// or empty string to use the default ingress.<clusterdomain> value.
+	WildcardCNAMETarget() string
 }
