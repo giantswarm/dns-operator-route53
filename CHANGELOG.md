@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Create A records for services in `envoy-gateway-system` namespace annotated with `giantswarm.io/external-dns: managed`, using the hostname from `external-dns.alpha.kubernetes.io/hostname`.
-- Support overriding the wildcard CNAME record target via the `dns-operator-route53.giantswarm.io/wildcard-cname-target` annotation on the Cluster CR.
+- Support overriding the wildcard CNAME record target via the `network.giantswarm.io/wildcard-cname-target` annotation on the Cluster CR.
 
 ## [0.10.3] - 2026-02-17
 

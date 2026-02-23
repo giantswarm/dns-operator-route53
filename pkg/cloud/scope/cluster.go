@@ -172,7 +172,7 @@ func (s *ClusterScope) Name() string {
 }
 
 // WildcardCNAMETarget returns the override value for the wildcard CNAME record
-// from the dns-operator-route53.giantswarm.io/wildcard-cname-target annotation,
+// from the network.giantswarm.io/wildcard-cname-target annotation,
 // or empty string if not set.
 func (s *ClusterScope) WildcardCNAMETarget() string {
 	return s.cluster.Annotations[key.AnnotationWildcardCNAMETarget]
