@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-02-24
+
 ### Added
 
 - Create A records for services in `envoy-gateway-system` namespace annotated with `giantswarm.io/external-dns: managed`, using the hostname from `external-dns.alpha.kubernetes.io/hostname`.
@@ -216,7 +218,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Create api and ingress entries in Route53.
 
-[Unreleased]: https://github.com/giantswarm/dns-operator-route53/compare/v0.10.3...HEAD
+[Unreleased]: https://github.com/giantswarm/dns-operator-route53/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/giantswarm/dns-operator-route53/compare/v0.10.3...v0.11.0
 [0.10.3]: https://github.com/giantswarm/dns-operator-route53/compare/v0.10.2...v0.10.3
 [0.10.2]: https://github.com/giantswarm/dns-operator-route53/compare/v0.10.1...v0.10.2
 [0.10.1]: https://github.com/giantswarm/dns-operator-route53/compare/v10.0.1...v0.10.1
