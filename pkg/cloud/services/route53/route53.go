@@ -41,6 +41,11 @@ type gatewayService struct {
 	ip       string
 }
 
+type ingressService struct {
+	hostname string
+	ip       string
+}
+
 func (s *Service) DeleteRoute53(ctx context.Context) error {
 
 	log := log.FromContext(ctx)
@@ -138,24 +143,34 @@ func (s *Service) buildARecordChange(hostedZoneID, recordName, recordValue, acti
 }
 
 func (s *Service) changeClusterIngressRecords(ctx context.Context, hostedZoneID, action string) error {
-	ingressIP, err := s.getIngressIP(ctx)
+	ingress, err := s.getIngressService(ctx)
 	if err != nil {
 		return microerror.Mask(err)
-	} else if ingressIP == "" {
+	} else if ingress == nil {
 		// Ingress service is not installed in this cluster.
 		return nil
 	}
 
 	wildcardCNAMETarget := s.scope.WildcardCNAMETarget()
 	if wildcardCNAMETarget == "" {
-		wildcardCNAMETarget = fmt.Sprintf("ingress.%s", s.scope.ClusterDomain())
+		wildcardCNAMETarget = ingress.hostname
 	}
 
 	input := &route53.ChangeResourceRecordSetsInput{
 		HostedZoneId: aws.String(hostedZoneID),
 		ChangeBatch: &route53.ChangeBatch{
 			Changes: []*route53.Change{
-				s.buildARecordChange(hostedZoneID, "ingress", ingressIP, action),
+				{
+					Action: aws.String(action),
+					ResourceRecordSet: &route53.ResourceRecordSet{
+						Name: aws.String(ingress.hostname),
+						Type: aws.String("A"),
+						TTL:  aws.Int64(ttl),
+						ResourceRecords: []*route53.ResourceRecord{
+							{Value: aws.String(ingress.ip)},
+						},
+					},
+				},
 				{
 					Action: aws.String(action),
 					ResourceRecordSet: &route53.ResourceRecordSet{
@@ -492,11 +507,10 @@ func (s *Service) describeClusterHostedZone(ctx context.Context) (string, error)
 	return *out.HostedZones[0].Id, nil
 }
 
-func (s *Service) getIngressIP(ctx context.Context) (string, error) {
-
+func (s *Service) getIngressService(ctx context.Context) (*ingressService, error) {
 	k8sClient, err := s.scope.ClusterK8sClient(ctx)
 	if err != nil {
-		return "", microerror.Mask(err)
+		return nil, microerror.Mask(err)
 	}
 
 	var icServices corev1.ServiceList
@@ -507,26 +521,34 @@ func (s *Service) getIngressIP(ctx context.Context) (string, error) {
 	)
 
 	if err != nil {
-		return "", microerror.Mask(err)
+		return nil, microerror.Mask(err)
 	}
 
-	var icServiceIP string
+	var result *ingressService
 
 	for _, icService := range icServices.Items {
 		if icService.Spec.Type == corev1.ServiceTypeLoadBalancer {
-			if icServiceIP != "" {
-				return "", microerror.Mask(tooManyICServicesError)
+			if result != nil {
+				return nil, microerror.Mask(tooManyICServicesError)
 			}
 
 			if len(icService.Status.LoadBalancer.Ingress) < 1 || icService.Status.LoadBalancer.Ingress[0].IP == "" {
-				return "", microerror.Mask(ingressNotReadyError)
+				return nil, microerror.Mask(ingressNotReadyError)
 			}
 
-			icServiceIP = icService.Status.LoadBalancer.Ingress[0].IP
+			hostname := fmt.Sprintf("ingress.%s", s.scope.ClusterDomain())
+			if annotated, ok := icService.Annotations[externalDNSHostnameAnnotation]; ok && annotated != "" {
+				hostname = annotated
+			}
+
+			result = &ingressService{
+				hostname: hostname,
+				ip:       icService.Status.LoadBalancer.Ingress[0].IP,
+			}
 		}
 	}
 
-	return icServiceIP, nil
+	return result, nil
 }
 
 func (s *Service) getGatewayServices(ctx context.Context) ([]gatewayService, error) {

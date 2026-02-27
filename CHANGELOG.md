@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Use the `external-dns.alpha.kubernetes.io/hostname` annotation on the ingress LoadBalancer service to determine the ingress DNS record name, falling back to `ingress.<cluster-domain>` when the annotation is absent.
+
 ## [0.11.0] - 2026-02-24
 
 ### Added
