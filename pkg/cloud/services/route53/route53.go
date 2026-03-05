@@ -156,6 +156,8 @@ func (s *Service) changeClusterIngressRecords(ctx context.Context, hostedZoneID,
 		wildcardCNAMETarget = ingress.hostname
 	}
 
+	log.FromContext(ctx).Info("Reconciling ingress DNS records", "ingressHostname", ingress.hostname, "ingressIP", ingress.ip, "wildcardCNAMETarget", wildcardCNAMETarget)
+
 	input := &route53.ChangeResourceRecordSetsInput{
 		HostedZoneId: aws.String(hostedZoneID),
 		ChangeBatch: &route53.ChangeBatch{
@@ -538,6 +540,7 @@ func (s *Service) getIngressService(ctx context.Context) (*ingressService, error
 
 			hostname := fmt.Sprintf("ingress.%s", s.scope.ClusterDomain())
 			if annotated, ok := icService.Annotations[externalDNSHostnameAnnotation]; ok && annotated != "" {
+				log.FromContext(ctx).Info("Using custom ingress hostname from annotation", "annotation", externalDNSHostnameAnnotation, "hostname", annotated)
 				hostname = annotated
 			}
 
