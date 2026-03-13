@@ -153,7 +153,7 @@ func (s *Service) changeClusterIngressRecords(ctx context.Context, hostedZoneID,
 
 	wildcardCNAMETarget := s.scope.WildcardCNAMETarget()
 	if wildcardCNAMETarget == "" {
-		wildcardCNAMETarget = ingress.hostname
+		wildcardCNAMETarget = fmt.Sprintf("ingress.%s", s.scope.ClusterDomain())
 	}
 
 	log.FromContext(ctx).Info("Reconciling ingress DNS records", "ingressHostname", ingress.hostname, "ingressIP", ingress.ip, "wildcardCNAMETarget", wildcardCNAMETarget)
