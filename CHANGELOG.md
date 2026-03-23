@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-03-23
+
 ### Changed
 
 - Use the `external-dns.alpha.kubernetes.io/hostname` annotation on the ingress LoadBalancer service to determine the ingress DNS record name, falling back to `ingress.<cluster-domain>` when the annotation is absent.
@@ -222,7 +224,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Create api and ingress entries in Route53.
 
-[Unreleased]: https://github.com/giantswarm/dns-operator-route53/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/giantswarm/dns-operator-route53/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/giantswarm/dns-operator-route53/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/giantswarm/dns-operator-route53/compare/v0.10.3...v0.11.0
 [0.10.3]: https://github.com/giantswarm/dns-operator-route53/compare/v0.10.2...v0.10.3
 [0.10.2]: https://github.com/giantswarm/dns-operator-route53/compare/v0.10.1...v0.10.2
