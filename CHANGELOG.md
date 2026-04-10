@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The `network.giantswarm.io/wildcard-cname-target` annotation value is now used as a prefix and suffixed with the cluster domain, instead of being used as the full CNAME target.
+
 ## [0.12.0] - 2026-03-23
 
 ### Changed
