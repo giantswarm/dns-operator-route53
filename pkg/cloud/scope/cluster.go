@@ -175,7 +175,11 @@ func (s *ClusterScope) Name() string {
 // from the network.giantswarm.io/wildcard-cname-target annotation,
 // or empty string if not set.
 func (s *ClusterScope) WildcardCNAMETarget() string {
-	return s.cluster.Annotations[key.AnnotationWildcardCNAMETarget]
+	target := s.cluster.Annotations[key.AnnotationWildcardCNAMETarget]
+	if target == "" {
+		return ""
+	}
+	return fmt.Sprintf("%s.%s", target, s.ClusterDomain())
 }
 
 // Session returns the AWS SDK session. Used for creating cluster client.
