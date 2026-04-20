@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-04-20
+
 ### Added
 
 - Add support for Proxmox clusters.
@@ -232,7 +234,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Create api and ingress entries in Route53.
 
-[Unreleased]: https://github.com/giantswarm/dns-operator-route53/compare/v0.12.0...HEAD
+[Unreleased]: https://github.com/giantswarm/dns-operator-route53/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/giantswarm/dns-operator-route53/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/giantswarm/dns-operator-route53/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/giantswarm/dns-operator-route53/compare/v0.10.3...v0.11.0
 [0.10.3]: https://github.com/giantswarm/dns-operator-route53/compare/v0.10.2...v0.10.3
