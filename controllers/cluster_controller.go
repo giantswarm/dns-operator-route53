@@ -24,8 +24,8 @@ import (
 	"github.com/giantswarm/dns-operator-route53/pkg/key"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	capi "sigs.k8s.io/cluster-api/api/v1beta1"
+	capi "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	"sigs.k8s.io/cluster-api/controllers/external"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -58,10 +58,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 	}
 
-	// init the unstructured client
-	infraCluster := &unstructured.Unstructured{}
-
-	// get the InfrastructureRef (v1.ObjectReference) from the CAPI cluster
+	// get the InfrastructureRef from the CAPI cluster
 	infraRef := cluster.Spec.InfrastructureRef
 
 	// Return early if the infrastructure cluster type is not enabled
@@ -70,10 +67,8 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return reconcile.Result{}, nil
 	}
 
-	// set the GVK to the unstructured infraCluster
-	infraCluster.SetGroupVersionKind(infraRef.GroupVersionKind())
-
-	if err := r.Get(ctx, req.NamespacedName, infraCluster); err != nil {
+	infraCluster, err := external.GetObjectFromContractVersionedRef(ctx, r, infraRef, req.Namespace)
+	if err != nil {
 		return reconcile.Result{}, microerror.Mask(err)
 	}
 
