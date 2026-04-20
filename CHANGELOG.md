@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add support for Proxmox clusters.
+
 ### Changed
 
 - The `network.giantswarm.io/wildcard-cname-target` annotation value is now used as a prefix and suffixed with the cluster domain, instead of being used as the full CNAME target.
