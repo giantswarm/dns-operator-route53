@@ -56,5 +56,7 @@ vcdclusters
 vsphereclusters
 {{- else if eq .Values.provider.kind "capa" -}}
 vsphereclusters
+{{- else if eq .Values.provider.kind "proxmox" -}}
+proxmoxclusters
 {{- end -}}
 {{- end -}}
