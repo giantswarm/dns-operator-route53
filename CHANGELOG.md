@@ -9,8 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Update golang docker tag to v1.26.3
+- Update golang docker tag to v1.26.3.
 - Update go toolchain directive to v1.26.3.
+- Update module golang.org/x/text to v0.37.0.
 
 ## [0.13.0] - 2026-04-20
 
