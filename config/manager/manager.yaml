@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
       - command:
-        - /manager
+        - /dns-operator-route53
         args:
         - --enable-leader-election
         image: controller:latest

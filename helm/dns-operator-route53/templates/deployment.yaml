@@ -34,7 +34,7 @@ spec:
           - name: AWS_SHARED_CREDENTIALS_FILE
             value: /home/.aws/credentials
         command:
-        - /manager
+        - /dns-operator-route53
         args:
         - --enable-leader-election
         - --base-domain={{ .Values.baseDomain }}
