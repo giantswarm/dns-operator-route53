@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update module k8s.io/component-base to v0.36.1.
 - Update module sigs.k8s.io/controller-runtime to v0.24.1.
 - Update module sigs.k8s.io/cluster-api to v1.13.2.
+- Remove superfluous build steps from the Dockerfile.
 
 ## [0.13.0] - 2026-04-20
 
