@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update module sigs.k8s.io/controller-runtime to v0.24.1.
 - Update module sigs.k8s.io/cluster-api to v1.13.2.
 - Remove superfluous build steps from the Dockerfile.
+- Update module golang.org/x/text to v0.38.0.
 
 ## [0.13.0] - 2026-04-20
 
