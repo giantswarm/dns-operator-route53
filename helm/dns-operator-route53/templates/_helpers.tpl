@@ -48,15 +48,15 @@ Image tag helper
 Kind of infra cluster according to provider type
 */}}
 {{- define "infraCluster" -}}
-{{- if eq .Values.provider.kind "openstack" -}}
+{{- if eq (.Values.provider).kind "openstack" -}}
 openstackclusters
-{{- else if eq .Values.provider.kind "cloud-director" -}}
+{{- else if eq (.Values.provider).kind "cloud-director" -}}
 vcdclusters
-{{- else if eq .Values.provider.kind "vsphere" -}}
+{{- else if eq (.Values.provider).kind "vsphere" -}}
 vsphereclusters
-{{- else if eq .Values.provider.kind "capa" -}}
+{{- else if eq (.Values.provider).kind "capa" -}}
 vsphereclusters
-{{- else if eq .Values.provider.kind "proxmox" -}}
+{{- else if eq (.Values.provider).kind "proxmox" -}}
 proxmoxclusters
 {{- end -}}
 {{- end -}}
