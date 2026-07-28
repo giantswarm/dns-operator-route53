@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Set CPU requests and limits.
 - Run container with read-only filesystem.
 - Bump golang.org/x/net to v0.56.0.
+- fix(deps): update module github.com/prometheus/client_golang to v1.24.1
 
 ## [0.14.0] - 2026-07-16
 
