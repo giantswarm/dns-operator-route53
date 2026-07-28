@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Set CPU requests and limits.
+- Run container with read-only filesystem.
+
 ## [0.14.0] - 2026-07-16
 
 ### Changed
