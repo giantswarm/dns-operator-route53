@@ -16,8 +16,10 @@ pod:
     id: 1000
   resources:
     limits:
+      cpu: 200m
       memory: 200Mi
     requests:
+      cpu: 50m
       memory: 200Mi
 
 # necessary for RBACs
