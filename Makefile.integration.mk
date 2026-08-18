@@ -1,7 +1,5 @@
 ##@ Integration tests
 
-# Local only. These targets are deliberately not wired into CI.
-
 ENVTEST_K8S_VERSION ?= 1.34.0
 ENVTEST_VERSION     ?= release-0.24
 # Keep CAPI_VERSION in sync with sigs.k8s.io/cluster-api in go.mod.
