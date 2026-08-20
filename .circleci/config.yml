@@ -11,7 +11,7 @@ workflows:
         name: go-build
         binary: dns-operator-route53
         resource_class: xlarge
-        test_target: integration-test
+        test_target: test-integration
         filters:
           tags:
             only: /^v.*/
