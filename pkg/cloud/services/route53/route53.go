@@ -457,12 +457,12 @@ func (s *Service) deleteClusterRecords(ctx context.Context, hostedZoneID string)
 	}
 
 	// delete cached records for given Zone
-	if err = dnscache.DeleteDNSCacheRecord(dnscache.ZoneRecords, hostedZoneID); err != nil {
+	if err = dnscache.DeleteDNSCacheRecord(dnscache.ZoneRecords, hostedZoneID); err != nil && !errors.Is(err, bigcache.ErrEntryNotFound) {
 		return err
 	}
 
 	// delete cached zoneID for cluster
-	if err = dnscache.DeleteDNSCacheRecord(dnscache.ZoneID, s.scope.Name()); err != nil {
+	if err = dnscache.DeleteDNSCacheRecord(dnscache.ZoneID, s.scope.Name()); err != nil && !errors.Is(err, bigcache.ErrEntryNotFound) {
 		return err
 	}
 

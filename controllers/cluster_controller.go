@@ -45,6 +45,17 @@ type ClusterReconciler struct {
 	ManagementCluster string
 	RoleArn           string
 	StaticBastionIP   string
+
+	// NewRoute53Service builds the route53 service. Tests replace it. A nil
+	// value uses route53.NewService.
+	NewRoute53Service func(scope.Route53Scope) *route53.Service
+}
+
+func (r *ClusterReconciler) route53Service(clusterScope scope.Route53Scope) *route53.Service {
+	if r.NewRoute53Service != nil {
+		return r.NewRoute53Service(clusterScope)
+	}
+	return route53.NewService(clusterScope)
 }
 
 func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -140,7 +151,7 @@ func (r *ClusterReconciler) reconcileNormal(ctx context.Context, clusterScope *s
 		return ctrl.Result{RequeueAfter: 2 * time.Minute}, nil
 	}
 
-	route53Service := route53.NewService(clusterScope)
+	route53Service := r.route53Service(clusterScope)
 	err := route53Service.ReconcileRoute53(ctx)
 	if route53.IsIngressNotReady(err) {
 		log.Error(err, "ingress is not ready yet, requeuing")
@@ -166,7 +177,7 @@ func (r *ClusterReconciler) reconcileDelete(ctx context.Context, clusterScope *s
 		return reconcile.Result{}, nil
 	}
 
-	route53Service := route53.NewService(clusterScope)
+	route53Service := r.route53Service(clusterScope)
 
 	if err := route53Service.DeleteRoute53(ctx); err != nil {
 		log.Error(err, "error deleting route53")

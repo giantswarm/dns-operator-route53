@@ -1,2 +1,4 @@
 /dns-operator-route53*
 .vscode/*
+/bin/
+/test/crds/cluster.x-k8s.io_clusters.yaml
