@@ -8,7 +8,7 @@ CAPI_VERSION        ?= v1.14.0
 LOCALBIN            := $(shell pwd)/bin
 SETUP_ENVTEST       := $(LOCALBIN)/setup-envtest
 CAPI_CLUSTER_CRD    := test/crds/cluster.x-k8s.io_clusters.yaml
-CAPI_CRD_URL        := https://raw.githubusercontent.com/kubernetes-sigs/cluster-api/$(CAPI_VERSION)/config/crd/bases/cluster.x-k8s.io_clusters.yaml
+CAPI_CRD_URL        := https://raw.githubusercontent.com/kubernetes-sigs/cluster-api/$(CAPI_VERSION)/core/config/crd/bases/cluster.x-k8s.io_clusters.yaml
 
 .PHONY: test-integration
 test-integration: $(SETUP_ENVTEST) $(CAPI_CLUSTER_CRD) ## Runs the local integration tests (not run in CI).
