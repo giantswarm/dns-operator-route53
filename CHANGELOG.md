@@ -17,6 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Run container with read-only filesystem.
 - Bump golang.org/x/net to v0.56.0.
 - fix(deps): update module github.com/prometheus/client_golang to v1.24.1
+- Update module k8s.io/api to v0.36.4.
+- Update module k8s.io/apiextensions-apiserver to v0.36.4.
+- Update module k8s.io/apimachinery to v0.36.4.
+- Update module k8s.io/client-go to v0.36.4.
+- Update module k8s.io/component-base to v0.36.4.
+- Update module k8s.io/utils.
+- Update module sigs.k8s.io/cluster-api to v1.14.0.
+- Update module github.com/allegro/bigcache/v3 to v3.2.0.
 
 ## [0.14.0] - 2026-07-16
 
