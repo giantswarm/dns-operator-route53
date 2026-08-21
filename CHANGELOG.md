@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update module k8s.io/utils.
 - Update module sigs.k8s.io/cluster-api to v1.14.0.
 - Update module github.com/allegro/bigcache/v3 to v3.2.0.
+- Update module golang.org/x/text to v0.41.0.
 
 ## [0.14.0] - 2026-07-16
 
