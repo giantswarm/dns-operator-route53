@@ -86,4 +86,15 @@ require (
 
 replace golang.org/x/sys v0.43.0 => golang.org/x/sys v0.45.0
 
-replace golang.org/x/crypto v0.51.0 => golang.org/x/crypto v0.53.0
+replace (
+	golang.org/x/crypto v0.51.0 => golang.org/x/crypto v0.53.0
+	golang.org/x/crypto v0.54.0 => golang.org/x/crypto v0.56.0
+)
+
+replace go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.43.0 => go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.46.0
+
+replace go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.43.0 => go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.46.0
+
+replace go.opentelemetry.io/otel/sdk v1.43.0 => go.opentelemetry.io/otel/sdk v1.46.0
+
+replace google.golang.org/grpc v1.80.0 => google.golang.org/grpc v1.83.2
