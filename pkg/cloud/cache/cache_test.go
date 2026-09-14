@@ -33,6 +33,7 @@ func TestCacheRoundTrip(t *testing.T) {
 		{"zone ID", ZoneID, "zoneID"},
 		{"nameserver records", NameserverRecords, "nameserverRecords"},
 		{"cluster gateway records", ClusterGatewayRecords, "gatewayRecords"},
+		{"cluster wildcard record", ClusterWildcardRecord, "wildcardRecord"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			newTestCache(t)

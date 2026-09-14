@@ -17,12 +17,14 @@ const (
 	zoneIDPrefix                = "zoneID"
 	nameserverRecordsPrefix     = "nameserverRecords"
 	clusterGatewayRecordsPrefix = "gatewayRecords"
+	clusterWildcardRecordPrefix = "wildcardRecord"
 
 	ClusterIngressRecords = 1
 	ZoneRecords           = 2
 	ZoneID                = 3
 	NameserverRecords     = 4
 	ClusterGatewayRecords = 5
+	ClusterWildcardRecord = 6
 
 	unknownCacheIDError = "unknown cache identifier"
 )
@@ -84,6 +86,8 @@ func GetDNSCacheRecord(recordID int, keySuffix string) ([]byte, error) {
 		return DNSOperatorCache.Get(fmt.Sprintf("%s-%s", nameserverRecordsPrefix, keySuffix))
 	case ClusterGatewayRecords:
 		return DNSOperatorCache.Get(fmt.Sprintf("%s-%s", clusterGatewayRecordsPrefix, keySuffix))
+	case ClusterWildcardRecord:
+		return DNSOperatorCache.Get(fmt.Sprintf("%s-%s", clusterWildcardRecordPrefix, keySuffix))
 	default:
 		return nil, errors.New(unknownCacheIDError)
 	}
@@ -103,6 +107,8 @@ func SetDNSCacheRecord(recordID int, keySuffix string, data []byte) error {
 		return DNSOperatorCache.Set(fmt.Sprintf("%s-%s", nameserverRecordsPrefix, keySuffix), data)
 	case ClusterGatewayRecords:
 		return DNSOperatorCache.Set(fmt.Sprintf("%s-%s", clusterGatewayRecordsPrefix, keySuffix), data)
+	case ClusterWildcardRecord:
+		return DNSOperatorCache.Set(fmt.Sprintf("%s-%s", clusterWildcardRecordPrefix, keySuffix), data)
 	default:
 		return errors.New(unknownCacheIDError)
 	}
@@ -122,6 +128,8 @@ func DeleteDNSCacheRecord(recordID int, keySuffix string) error {
 		return DNSOperatorCache.Delete(fmt.Sprintf("%s-%s", nameserverRecordsPrefix, keySuffix))
 	case ClusterGatewayRecords:
 		return DNSOperatorCache.Delete(fmt.Sprintf("%s-%s", clusterGatewayRecordsPrefix, keySuffix))
+	case ClusterWildcardRecord:
+		return DNSOperatorCache.Delete(fmt.Sprintf("%s-%s", clusterWildcardRecordPrefix, keySuffix))
 	default:
 		return errors.New(unknownCacheIDError)
 	}
