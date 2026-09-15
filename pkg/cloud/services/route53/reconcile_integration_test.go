@@ -376,6 +376,61 @@ func TestReconcileUsesTheWildcardCNAMETarget(t *testing.T) {
 	}
 }
 
+// A cluster which routes through Envoy Gateway has no ingress controller
+// Service. The wildcard target annotation must still be honoured there.
+func TestReconcileUsesTheWildcardCNAMETargetWithoutAnIngressController(t *testing.T) {
+	f := setup(t)
+	f.scope.wildcardCNAMETarget = "gateway"
+	createService(t, newGatewayService("gateway", "gateway."+clusterDomain(), "10.0.1.1"))
+
+	if err := f.service.ReconcileRoute53(context.Background()); err != nil {
+		t.Fatalf("ReconcileRoute53: %v", err)
+	}
+
+	record, ok := f.route53.Record(f.clusterZoneID(t), "*."+clusterDomain(), route53.RRTypeCname)
+	if !ok {
+		t.Fatalf("there is no wildcard record")
+	}
+	if diff := cmp.Diff([]string{"gateway." + clusterDomain()}, record.Values); diff != "" {
+		t.Errorf("wildcard target mismatch (-want +got):\n%s", diff)
+	}
+}
+
+// Without an ingress controller and without the annotation there is nothing to
+// point the wildcard at, so it must not be written.
+func TestReconcileWritesNoWildcardRecordWithoutATarget(t *testing.T) {
+	f := setup(t)
+	createService(t, newGatewayService("gateway", "gateway."+clusterDomain(), "10.0.1.1"))
+
+	if err := f.service.ReconcileRoute53(context.Background()); err != nil {
+		t.Fatalf("ReconcileRoute53: %v", err)
+	}
+
+	if _, ok := f.route53.Record(f.clusterZoneID(t), "*."+clusterDomain(), route53.RRTypeCname); ok {
+		t.Errorf("a wildcard record was written without a target")
+	}
+}
+
+func TestReconcileWritesTheWildcardRecordOnlyOnce(t *testing.T) {
+	f := setup(t)
+	f.scope.wildcardCNAMETarget = "gateway"
+	createService(t, newGatewayService("gateway", "gateway."+clusterDomain(), "10.0.1.1"))
+
+	if err := f.service.ReconcileRoute53(context.Background()); err != nil {
+		t.Fatalf("first ReconcileRoute53: %v", err)
+	}
+
+	f.route53.ResetCalls()
+
+	if err := f.service.ReconcileRoute53(context.Background()); err != nil {
+		t.Fatalf("second ReconcileRoute53: %v", err)
+	}
+
+	if got := f.route53.CallsTo(fakeroute53.OpChangeResourceRecordSet); got != 0 {
+		t.Errorf("ChangeResourceRecordSets calls = %d, want 0, because nothing changed", got)
+	}
+}
+
 func TestReconcileWritesTheIngressRecordsOnlyOnce(t *testing.T) {
 	f := setup(t)
 	createService(t, newIngressService("ingress-controller", "ingress-nginx", "10.0.0.2"))

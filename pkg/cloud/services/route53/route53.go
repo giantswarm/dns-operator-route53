@@ -115,11 +115,22 @@ func (s *Service) ReconcileRoute53(ctx context.Context) error {
 		return microerror.Mask(err)
 	}
 
-	if err := s.changeClusterIngressRecords(ctx, string(cachedHostedZoneID), actionUpsert); err != nil {
+	// The ingress controller Service backs both the ingress record and the
+	// default wildcard target, so it is looked up once and handed to both steps.
+	ingress, err := s.getIngressService(ctx)
+	if err != nil {
+		return microerror.Mask(err)
+	}
+
+	if err := s.changeClusterIngressRecords(ctx, string(cachedHostedZoneID), actionUpsert, ingress); err != nil {
 		return microerror.Mask(err)
 	}
 
 	if err := s.changeClusterGatewayRecords(ctx, string(cachedHostedZoneID), actionUpsert); err != nil {
+		return microerror.Mask(err)
+	}
+
+	if err := s.changeClusterWildcardRecord(ctx, string(cachedHostedZoneID), actionUpsert, ingress); err != nil {
 		return microerror.Mask(err)
 	}
 
@@ -142,21 +153,13 @@ func (s *Service) buildARecordChange(hostedZoneID, recordName, recordValue, acti
 	}
 }
 
-func (s *Service) changeClusterIngressRecords(ctx context.Context, hostedZoneID, action string) error {
-	ingress, err := s.getIngressService(ctx)
-	if err != nil {
-		return microerror.Mask(err)
-	} else if ingress == nil {
+func (s *Service) changeClusterIngressRecords(ctx context.Context, hostedZoneID, action string, ingress *ingressService) error {
+	if ingress == nil {
 		// Ingress service is not installed in this cluster.
 		return nil
 	}
 
-	wildcardCNAMETarget := s.scope.WildcardCNAMETarget()
-	if wildcardCNAMETarget == "" {
-		wildcardCNAMETarget = fmt.Sprintf("ingress.%s", s.scope.ClusterDomain())
-	}
-
-	log.FromContext(ctx).Info("Reconciling ingress DNS records", "ingressHostname", ingress.hostname, "ingressIP", ingress.ip, "wildcardCNAMETarget", wildcardCNAMETarget)
+	log.FromContext(ctx).Info("Reconciling ingress DNS records", "ingressHostname", ingress.hostname, "ingressIP", ingress.ip)
 
 	input := &route53.ChangeResourceRecordSetsInput{
 		HostedZoneId: aws.String(hostedZoneID),
@@ -173,16 +176,57 @@ func (s *Service) changeClusterIngressRecords(ctx context.Context, hostedZoneID,
 						},
 					},
 				},
+			},
+		},
+	}
+
+	cachedClusterIngressRecords, _ := dnscache.GetDNSCacheRecord(dnscache.ClusterIngressRecords, hostedZoneID)
+	if input.String() != string(cachedClusterIngressRecords) {
+		if err := dnscache.SetDNSCacheRecord(dnscache.ClusterIngressRecords, hostedZoneID, []byte(input.String())); err != nil {
+			return err
+		}
+
+		if _, err := s.Route53Client.ChangeResourceRecordSetsWithContext(ctx, input); err != nil {
+			return wrapRoute53Error(err)
+		}
+	}
+
+	return nil
+}
+
+// changeClusterWildcardRecord upserts the wildcard CNAME of the cluster domain.
+//
+// The record is deliberately not tied to the ingress controller. A cluster
+// which routes ingress traffic through Envoy Gateway has no ingress controller
+// Service, but still needs the wildcard whenever the
+// network.giantswarm.io/wildcard-cname-target annotation names a target.
+//
+// Without the annotation the wildcard follows the ingress controller, as it did
+// before; a cluster with neither gets no wildcard record.
+func (s *Service) changeClusterWildcardRecord(ctx context.Context, hostedZoneID, action string, ingress *ingressService) error {
+	target := s.scope.WildcardCNAMETarget()
+	if target == "" {
+		if ingress == nil {
+			// Nothing to point the wildcard at.
+			return nil
+		}
+		target = fmt.Sprintf("ingress.%s", s.scope.ClusterDomain())
+	}
+
+	log.FromContext(ctx).Info("Reconciling wildcard DNS record", "wildcardCNAMETarget", target)
+
+	input := &route53.ChangeResourceRecordSetsInput{
+		HostedZoneId: aws.String(hostedZoneID),
+		ChangeBatch: &route53.ChangeBatch{
+			Changes: []*route53.Change{
 				{
 					Action: aws.String(action),
 					ResourceRecordSet: &route53.ResourceRecordSet{
 						Name: aws.String(fmt.Sprintf("*.%s", s.scope.ClusterDomain())),
 						Type: aws.String("CNAME"),
-						TTL:  aws.Int64(300),
+						TTL:  aws.Int64(ttl),
 						ResourceRecords: []*route53.ResourceRecord{
-							{
-								Value: aws.String(wildcardCNAMETarget),
-							},
+							{Value: aws.String(target)},
 						},
 					},
 				},
@@ -190,9 +234,9 @@ func (s *Service) changeClusterIngressRecords(ctx context.Context, hostedZoneID,
 		},
 	}
 
-	cachedClusterIngressRecords, _ := dnscache.GetDNSCacheRecord(dnscache.ClusterIngressRecords, hostedZoneID)
-	if input.String() != string(cachedClusterIngressRecords) {
-		if err = dnscache.SetDNSCacheRecord(dnscache.ClusterIngressRecords, hostedZoneID, []byte(input.String())); err != nil {
+	cachedWildcardRecord, _ := dnscache.GetDNSCacheRecord(dnscache.ClusterWildcardRecord, hostedZoneID)
+	if input.String() != string(cachedWildcardRecord) {
+		if err := dnscache.SetDNSCacheRecord(dnscache.ClusterWildcardRecord, hostedZoneID, []byte(input.String())); err != nil {
 			return err
 		}
 
