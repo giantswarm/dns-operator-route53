@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update module k8s.io/client-go to v0.36.4.
 - Update module k8s.io/component-base to v0.36.4.
 - Update module k8s.io/utils.
-- Update module sigs.k8s.io/cluster-api to v1.14.2.
+- Update module sigs.k8s.io/cluster-api to v1.13.6.
 - Update Go toolchain directive to v1.27.1.
 
 ### Fixed
