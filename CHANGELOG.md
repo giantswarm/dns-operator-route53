@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump golang.org/x/net to v0.56.0.
 - fix(deps): update module github.com/prometheus/client_golang to v1.24.1
 - Update architect to v10.10.0 (giantswarm/dns-operator-route53#478)
+- Update architect to v10.11.1 (giantswarm/dns-operator-route53#479)
 - Update module github.com/allegro/bigcache/v3 to v3.2.0.
 - Update module golang.org/x/text to v0.42.0.
 - Update module k8s.io/api to v0.36.4.
