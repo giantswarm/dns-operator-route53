@@ -117,13 +117,15 @@ func (s *Service) ReconcileRoute53(ctx context.Context) error {
 
 	// The ingress controller Service backs both the ingress record and the
 	// default wildcard target, so it is looked up once and handed to both steps.
-	ingress, err := s.getIngressService(ctx)
-	if err != nil {
-		return microerror.Mask(err)
-	}
-
-	if err := s.changeClusterIngressRecords(ctx, string(cachedHostedZoneID), actionUpsert, ingress); err != nil {
-		return microerror.Mask(err)
+	//
+	// A failed lookup, e.g. an ingress controller without an address yet, must
+	// not hold back the gateway records or an annotated wildcard target. The
+	// error is returned at the end so that the reconcile is retried.
+	ingress, ingressErr := s.getIngressService(ctx)
+	if ingressErr == nil {
+		if err := s.changeClusterIngressRecords(ctx, string(cachedHostedZoneID), actionUpsert, ingress); err != nil {
+			return microerror.Mask(err)
+		}
 	}
 
 	if err := s.changeClusterGatewayRecords(ctx, string(cachedHostedZoneID), actionUpsert); err != nil {
@@ -132,6 +134,10 @@ func (s *Service) ReconcileRoute53(ctx context.Context) error {
 
 	if err := s.changeClusterWildcardRecord(ctx, string(cachedHostedZoneID), actionUpsert, ingress); err != nil {
 		return microerror.Mask(err)
+	}
+
+	if ingressErr != nil {
+		return microerror.Mask(ingressErr)
 	}
 
 	return nil
