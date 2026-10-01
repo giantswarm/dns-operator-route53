@@ -411,6 +411,38 @@ func TestReconcileWritesNoWildcardRecordWithoutATarget(t *testing.T) {
 	}
 }
 
+// The gateway records and the annotated wildcard target do not depend on the
+// ingress controller, so an ingress controller which has no address yet must
+// not hold them back. The reconcile still fails so that it is retried for the
+// ingress record.
+func TestReconcileWritesTheWildcardRecordWhileTheIngressServiceHasNoAddress(t *testing.T) {
+	f := setup(t)
+	f.scope.wildcardCNAMETarget = "gateway"
+	createService(t, newIngressService("ingress-controller", "ingress-nginx", ""))
+	createService(t, newGatewayService("gateway", "gateway."+clusterDomain(), "10.0.1.1"))
+
+	err := f.service.ReconcileRoute53(context.Background())
+	if !IsIngressNotReady(err) {
+		t.Fatalf("error = %v, want an ingress not ready error", err)
+	}
+
+	gateway, ok := f.route53.Record(f.clusterZoneID(t), "gateway."+clusterDomain(), route53.RRTypeA)
+	if !ok {
+		t.Fatalf("there is no gateway record")
+	}
+	if diff := cmp.Diff([]string{"10.0.1.1"}, gateway.Values); diff != "" {
+		t.Errorf("gateway record mismatch (-want +got):\n%s", diff)
+	}
+
+	record, ok := f.route53.Record(f.clusterZoneID(t), "*."+clusterDomain(), route53.RRTypeCname)
+	if !ok {
+		t.Fatalf("there is no wildcard record")
+	}
+	if diff := cmp.Diff([]string{"gateway." + clusterDomain()}, record.Values); diff != "" {
+		t.Errorf("wildcard target mismatch (-want +got):\n%s", diff)
+	}
+}
+
 func TestReconcileWritesTheWildcardRecordOnlyOnce(t *testing.T) {
 	f := setup(t)
 	f.scope.wildcardCNAMETarget = "gateway"
