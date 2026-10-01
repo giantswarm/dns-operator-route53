@@ -7,8 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
+## [0.15.0] - 2026-10-01
 
+### Fixed
+- Honour the `network.giantswarm.io/wildcard-cname-target` annotation on clusters without an ingress controller. The wildcard CNAME is now reconciled on its own instead of as part of the ingress records, so clusters which route through Envoy Gateway get the record too.
+- An ingress controller which is not ready yet no longer holds back the Envoy Gateway records and an annotated wildcard CNAME. The reconcile still fails afterwards, so it is retried for the ingress record.
 - The `helm.sh/chart` label is valid for long chart versions: the 63-character cut trims the whole trailing run of `-`, `.` and `_`.
 
 ### Added
@@ -33,11 +36,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update module k8s.io/utils.
 - Update module sigs.k8s.io/cluster-api to v1.13.6.
 - Update Go toolchain directive to v1.27.1.
-
-### Fixed
-
-- Honour the `network.giantswarm.io/wildcard-cname-target` annotation on clusters without an ingress controller. The wildcard CNAME is now reconciled on its own instead of as part of the ingress records, so clusters which route through Envoy Gateway get the record too.
-- An ingress controller which is not ready yet no longer holds back the Envoy Gateway records and an annotated wildcard CNAME. The reconcile still fails afterwards, so it is retried for the ingress record.
 
 ## [0.14.0] - 2026-07-16
 
@@ -284,7 +282,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Create api and ingress entries in Route53.
 
-[Unreleased]: https://github.com/giantswarm/dns-operator-route53/compare/v0.14.0...HEAD
+[Unreleased]: https://github.com/giantswarm/dns-operator-route53/compare/v0.15.0...HEAD
+[0.15.0]: https://github.com/giantswarm/dns-operator-route53/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/giantswarm/dns-operator-route53/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/giantswarm/dns-operator-route53/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/giantswarm/dns-operator-route53/compare/v0.11.0...v0.12.0
