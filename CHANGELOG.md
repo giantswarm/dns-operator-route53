@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-10-01
+
 ### Fixed
 
 - The `helm.sh/chart` label is valid for long chart versions: the 63-character cut trims the whole trailing run of `-`, `.` and `_`.
@@ -284,7 +286,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Create api and ingress entries in Route53.
 
-[Unreleased]: https://github.com/giantswarm/dns-operator-route53/compare/v0.14.0...HEAD
+[Unreleased]: https://github.com/giantswarm/dns-operator-route53/compare/v0.15.0...HEAD
+[0.15.0]: https://github.com/giantswarm/dns-operator-route53/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/giantswarm/dns-operator-route53/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/giantswarm/dns-operator-route53/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/giantswarm/dns-operator-route53/compare/v0.11.0...v0.12.0
