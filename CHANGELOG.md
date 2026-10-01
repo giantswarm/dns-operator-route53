@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Honour the `network.giantswarm.io/wildcard-cname-target` annotation on clusters without an ingress controller. The wildcard CNAME is now reconciled on its own instead of as part of the ingress records, so clusters which route through Envoy Gateway get the record too.
+- An ingress controller which is not ready yet no longer holds back the Envoy Gateway records and an annotated wildcard CNAME. The reconcile still fails afterwards, so it is retried for the ingress record.
 
 ## [0.14.0] - 2026-07-16
 
