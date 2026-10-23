@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update architect to v10.13.2 (giantswarm/dns-operator-route53#496)
 - Update architect to v10.13.5 (giantswarm/dns-operator-route53#498)
 - Update architect to v10.14.10 (giantswarm/dns-operator-route53#500)
+- Update architect to v10.14.18 (giantswarm/dns-operator-route53#508)
 
 ### Security
 
