@@ -17,12 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- CI: architect orb 10.16.7, which pushes the chart to the git app catalogs with the architect GitHub App instead of the `catalogbot` account (giantswarm/giantswarm#34786).
 - Set CPU requests and limits.
 - Run container with read-only filesystem.
 - Bump golang.org/x/net to v0.56.0.
 - fix(deps): update module github.com/prometheus/client_golang to v1.24.1
-- Update architect to v10.10.0 (giantswarm/dns-operator-route53#478)
-- Update architect to v10.11.1 (giantswarm/dns-operator-route53#479)
 - Update module github.com/allegro/bigcache/v3 to v3.2.0.
 - Update module golang.org/x/text to v0.42.0.
 - Update module k8s.io/api to v0.36.4.
