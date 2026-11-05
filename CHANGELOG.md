@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update architect to v10.16.6 (giantswarm/dns-operator-route53#516)
 - Update `golang.org/x/net` to v0.60.0 to fix GO-2026-6603, GO-2026-6610, GO-2026-6611, GO-2026-6612 and GO-2026-6617.
 - Update `golang.org/x/net` to v0.62.0 to fix GO-2026-6866 and GO-2026-6860.
+- Update architect to v10.17.2 (giantswarm/dns-operator-route53#524)
 
 ## [0.15.0] - 2026-10-01
 
