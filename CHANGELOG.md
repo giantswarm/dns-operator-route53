@@ -17,14 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- CI: architect orb 10.16.7, which pushes the chart to the git app catalogs with the architect GitHub App instead of the `catalogbot` account (giantswarm/giantswarm#34786).
 - Set CPU requests and limits.
 - Run container with read-only filesystem.
-- Bump golang.org/x/net to v0.56.0.
+- Bump golang.org/x/net to v0.62.0.
 - fix(deps): update module github.com/prometheus/client_golang to v1.24.1
-- Update architect to v10.10.0 (giantswarm/dns-operator-route53#478)
-- Update architect to v10.11.1 (giantswarm/dns-operator-route53#479)
 - Update module github.com/allegro/bigcache/v3 to v3.2.0.
-- Update module golang.org/x/text to v0.42.0.
+- Update module golang.org/x/text to v0.43.0.
 - Update module k8s.io/api to v0.36.4.
 - Update module k8s.io/apiextensions-apiserver to v0.36.4.
 - Update module k8s.io/apimachinery to v0.36.4.
@@ -38,6 +37,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Honour the `network.giantswarm.io/wildcard-cname-target` annotation on clusters without an ingress controller. The wildcard CNAME is now reconciled on its own instead of as part of the ingress records, so clusters which route through Envoy Gateway get the record too.
 - An ingress controller which is not ready yet no longer holds back the Envoy Gateway records and an annotated wildcard CNAME. The reconcile still fails afterwards, so it is retried for the ingress record.
+
+### Security
+
+- Update `golang.org/x/net` to v0.62.0 to fix the CVEs nancy reports.
 
 ## [0.14.0] - 2026-07-16
 
